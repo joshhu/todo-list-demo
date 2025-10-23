@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task CRUD 測試</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .test-results {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task CRUD 整合測試</h1>
+
+    <div class="test-section">
+        <h2>1. 模組載入測試</h2>
+        <div id="module-loading" class="status info">正在載入模組...</div>
+        <button onclick="testModuleLoading()">重新測試模組載入</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 數據層測試</h2>
+        <div id="data-layer-test" class="status info">等待測試...</div>
+        <button onclick="testDataLayer()">測試數據層</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. CRUD 操作測試</h2>
+        <div id="crud-test" class="status info">等待測試...</div>
+        <button onclick="testCRUDOperations()">執行 CRUD 測試</button>
+    </div>
+
+    <div class="test-section">
+        <h2>4. UI 組件測試</h2>
+        <div id="ui-test" class="status info">等待測試...</div>
+        <button onclick="testUIComponents()">測試 UI 組件</button>
+    </div>
+
+    <div class="test-section">
+        <h2>5. 整合測試</h2>
+        <div id="integration-test" class="status info">等待測試...</div>
+        <button onclick="testIntegration()">執行整合測試</button>
+    </div>
+
+    <div class="test-section">
+        <h2>測試結果</h2>
+        <div id="test-results" class="test-results">測試結果將顯示在這裡...</div>
+        <button onclick="clearResults()">清除結果</button>
+    </div>
+
+    <script type="module">
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            testResults.push(logEntry);
+            updateTestResults();
+        }
+
+        function updateTestResults() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.textContent = testResults.join('\n');
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        // 測試模組載入
+        window.testModuleLoading = async function() {
+            updateStatus('module-loading', '正在載入模組...', 'info');
+
+            try {
+                log('開始測試模組載入...');
+
+                // 測試動態導入
+                const modules = [
+                    'js/config/settings.js',
+                    'js/modules/utils.js',
+                    'js/core/EventEmitter.js',
+                    'js/models/TaskValidator.js',
+                    'js/models/Task.js',
+                    'js/repositories/TodoRepository.js',
+                    'js/services/TaskService.js',
+                    'js/components/TaskManager.js',
+                    'js/modules/app.js',
+                    'js/main.js'
+                ];
+
+                for (const modulePath of modules) {
+                    try {
+                        const module = await import(modulePath);
+                        log(`✓ 成功載入模組: ${modulePath}`);
+                    } catch (error) {
+                        log(`✗ 載入模組失敗: ${modulePath} - ${error.message}`, 'error');
+                        updateStatus('module-loading', `模組載入失敗: ${modulePath}`, 'error');
+                        return;
+                    }
+                }
+
+                updateStatus('module-loading', '所有模組載入成功！', 'success');
+                log('✓ 所有模組載入完成');
+
+            } catch (error) {
+                updateStatus('module-loading', `模組載入失敗: ${error.message}`, 'error');
+                log(`✗ 模組載入失敗: ${error.message}`, 'error');
+            }
+        };
+
+        // 測試數據層
+        window.testDataLayer = async function() {
+            updateStatus('data-layer-test', '正在測試數據層...', 'info');
+
+            try {
+                log('開始測試數據層...');
+
+                // 導入必要模組
+                const { Task } = await import('js/models/Task.js');
+                const { TodoRepository } = await import('js/repositories/TodoRepository.js');
+
+                // 測試 Task 模型
+                const taskData = {
+                    title: '測試任務',
+                    description: '這是一個測試任務',
+                    priority: 'high'
+                };
+
+                const task = new Task(taskData);
+                log(`✓ Task 模型創建成功: ${task.title}`);
+
+                // 測試 TodoRepository
+                const repository = new TodoRepository();
+                await repository.initialize();
+                log('✓ TodoRepository 初始化成功');
+
+                // 測試基本 CRUD
+                const createdTask = await repository.create(taskData);
+                log(`✓ 任務創建成功: ${createdTask.id}`);
+
+                const retrievedTask = await repository.getById(createdTask.id);
+                log(`✓ 任務檢索成功: ${retrievedTask?.title}`);
+
+                const allTasks = await repository.getAll();
+                log(`✓ 任務列表獲取成功: ${allTasks.length} 個任務`);
+
+                const updatedTask = await repository.update(createdTask.id, {
+                    title: '更新後的測試任務'
+                });
+                log(`✓ 任務更新成功: ${updatedTask.title}`);
+
+                const deleted = await repository.delete(createdTask.id);
+                log(`✓ 任務刪除成功: ${deleted}`);
+
+                updateStatus('data-layer-test', '數據層測試通過！', 'success');
+                log('✓ 數據層測試完成');
+
+            } catch (error) {
+                updateStatus('data-layer-test', `數據層測試失敗: ${error.message}`, 'error');
+                log(`✗ 數據層測試失敗: ${error.message}`, 'error');
+            }
+        };
+
+        // 測試 CRUD 操作
+        window.testCRUDOperations = async function() {
+            updateStatus('crud-test', '正在測試 CRUD 操作...', 'info');
+
+            try {
+                log('開始測試 CRUD 操作...');
+
+                const { TaskService } = await import('js/services/TaskService.js');
+                const taskService = new TaskService();
+                await taskService.initialize();
+
+                // 創建測試數據
+                const testTasks = [
+                    { title: '測試任務 1', priority: 'high' },
+                    { title: '測試任務 2', priority: 'medium', description: '有描述的任務' },
+                    { title: '測試任務 3', priority: 'low', tags: ['test', 'crud'] }
+                ];
+
+                // 測試創建
+                const createdTasks = [];
+                for (const taskData of testTasks) {
+                    const task = await taskService.createTask(taskData);
+                    createdTasks.push(task);
+                    log(`✓ 創建任務: ${task.title}`);
+                }
+
+                // 測試讀取
+                const allTasks = await taskService.getAllTasks();
+                log(`✓ 獲取所有任務: ${allTasks.length} 個`);
+
+                // 測試搜索
+                const searchResults = await taskService.searchTasks('測試');
+                log(`✓ 搜索結果: ${searchResults.length} 個任務`);
+
+                // 測試更新
+                const updatedTask = await taskService.updateTask(createdTasks[0].id, {
+                    title: '更新後的任務',
+                    completed: true
+                });
+                log(`✓ 更新任務: ${updatedTask.title} (完成: ${updatedTask.completed})`);
+
+                // 測試切換完成狀態
+                const toggledTask = await taskService.toggleTaskComplete(createdTasks[1].id);
+                log(`✓ 切換完成狀態: ${toggledTask.title} (完成: ${toggledTask.completed})`);
+
+                // 測試統計
+                const stats = await taskService.getTaskStats();
+                log(`✓ 統計資訊: 總計 ${stats.total}, 完成 ${stats.completed}, 進行中 ${stats.active}`);
+
+                // 清理測試數據
+                for (const task of createdTasks) {
+                    await taskService.deleteTask(task.id);
+                    log(`✓ 刪除測試任務: ${task.title}`);
+                }
+
+                updateStatus('crud-test', 'CRUD 操作測試通過！', 'success');
+                log('✓ CRUD 操作測試完成');
+
+            } catch (error) {
+                updateStatus('crud-test', `CRUD 測試失敗: ${error.message}`, 'error');
+                log(`✗ CRUD 測試失敗: ${error.message}`, 'error');
+            }
+        };
+
+        // 測試 UI 組件
+        window.testUIComponents = async function() {
+            updateStatus('ui-test', '正在測試 UI 組件...', 'info');
+
+            try {
+                log('開始測試 UI 組件...');
+
+                // 創建測試容器
+                const testContainer = document.createElement('div');
+                testContainer.id = 'test-app-container';
+                testContainer.style.cssText = 'position: absolute; left: -9999px; top: 0;';
+                document.body.appendChild(testContainer);
+
+                // 測試 TaskManager
+                const { TaskManager } = await import('js/components/TaskManager.js');
+                const taskManager = new TaskManager(testContainer);
+
+                // 等待初始化完成
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                log('✓ TaskManager 初始化成功');
+
+                // 檢查 UI 元素是否創建
+                const hasInput = testContainer.querySelector('#task-form') !== null;
+                const hasList = testContainer.querySelector('#task-list') !== null;
+                const hasStats = testContainer.querySelector('#task-stats') !== null;
+
+                if (hasInput && hasList && hasStats) {
+                    log('✓ 所有必要 UI 元素已創建');
+                } else {
+                    throw new Error('缺少必要的 UI 元素');
+                }
+
+                // 清理
+                taskManager.dispose();
+                document.body.removeChild(testContainer);
+
+                updateStatus('ui-test', 'UI 組件測試通過！', 'success');
+                log('✓ UI 組件測試完成');
+
+            } catch (error) {
+                updateStatus('ui-test', `UI 測試失敗: ${error.message}`, 'error');
+                log(`✗ UI 測試失敗: ${error.message}`, 'error');
+            }
+        };
+
+        // 整合測試
+        window.testIntegration = async function() {
+            updateStatus('integration-test', '正在執行整合測試...', 'info');
+
+            try {
+                log('開始執行整合測試...');
+
+                // 創建完整的應用程式實例
+                const testContainer = document.createElement('div');
+                testContainer.id = 'integration-test-container';
+                testContainer.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 800px; height: 600px;';
+                document.body.appendChild(testContainer);
+
+                // 初始化組件
+                const { TaskManager } = await import('js/components/TaskManager.js');
+                const taskManager = new TaskManager(testContainer);
+
+                // 等待初始化
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                log('✓ 整合測試環境設置完成');
+
+                // 模擬完整的用戶操作流程
+                log('開始模擬用戶操作...');
+
+                // 1. 創建任務
+                const taskTitle = '整合測試任務';
+                const titleInput = testContainer.querySelector('#task-title');
+                if (titleInput) {
+                    titleInput.value = taskTitle;
+                    titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    log(`✓ 輸入任務標題: ${taskTitle}`);
+                }
+
+                // 2. 提交表單
+                const form = testContainer.querySelector('#task-form');
+                if (form) {
+                    form.dispatchEvent(new Event('submit', { bubbles: true }));
+                    log('✓ 提交任務表單');
+                }
+
+                // 等待處理完成
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // 3. 檢查任務是否創建
+                const taskList = testContainer.querySelector('#task-list');
+                if (taskList && taskList.children.length > 0) {
+                    log(`✓ 任務創建成功，列表中有 ${taskList.children.length} 個任務`);
+                } else {
+                    log('⚠ 任務創建後未在列表中顯示', 'error');
+                }
+
+                // 4. 測試篩選功能
+                const filterButtons = testContainer.querySelectorAll('.filter-btn');
+                if (filterButtons.length > 0) {
+                    filterButtons[1].click(); // 點擊進行中篩選
+                    log('✓ 測試篩選功能');
+                }
+
+                // 清理
+                taskManager.dispose();
+                document.body.removeChild(testContainer);
+
+                updateStatus('integration-test', '整合測試通過！', 'success');
+                log('✓ 整合測試完成');
+
+            } catch (error) {
+                updateStatus('integration-test', `整合測試失敗: ${error.message}`, 'error');
+                log(`✗ 整合測試失敗: ${error.message}`, 'error');
+            }
+        };
+
+        // 清除結果
+        window.clearResults = function() {
+            testResults = [];
+            updateTestResults();
+        };
+
+        // 自動執行模組載入測試
+        window.testModuleLoading();
+    </script>
+</body>
+</html>

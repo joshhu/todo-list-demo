@@ -161,22 +161,10 @@ class App {
     async initializeModules() {
         console.log('🔧 正在初始化模組...');
 
-        try {
-            // 取得應用程式容器
-            const appContainer = domUtils.query('#app');
-            if (!appContainer) {
-                throw new Error('找不到應用程式容器 #app');
-            }
+        // 模組已在建構函式中初始化
+        // 這裡可以執行額外的模組設定
 
-            // 初始化任務管理器
-            this.taskManager = new TaskManager(appContainer);
-            this.modules.taskManager = this.taskManager;
-
-            console.log('✅ 所有模組初始化完成');
-        } catch (error) {
-            console.error('模組初始化失敗:', error);
-            throw error;
-        }
+        console.log('✅ 所有模組初始化完成');
     }
 
     /**
@@ -421,9 +409,7 @@ class App {
     async refreshData() {
         try {
             console.log('🔄 正在重新整理資料...');
-            if (this.taskManager) {
-                await this.taskManager.loadTasks();
-            }
+            this.modules.ui.render();
         } catch (error) {
             console.error('重新整理資料失敗:', error);
         }
@@ -465,8 +451,8 @@ class App {
      * 顯示通知
      */
     showNotification(message, type = 'info') {
-        if (this.taskManager) {
-            this.taskManager.showNotification(message, type);
+        if (this.modules.ui) {
+            this.modules.ui.showNotification(message, type);
         }
     }
 
@@ -549,13 +535,15 @@ class App {
      * 銷毀模組
      */
     async destroyModules() {
-        try {
-            if (this.taskManager && typeof this.taskManager.dispose === 'function') {
-                this.taskManager.dispose();
-                console.log('✅ TaskManager 已銷毀');
+        for (const [name, module] of Object.entries(this.modules)) {
+            try {
+                if (typeof module.destroy === 'function') {
+                    await module.destroy();
+                }
+                console.log(`✅ 模組 ${name} 已銷毀`);
+            } catch (error) {
+                console.error(`❌ 銷毀模組 ${name} 失敗:`, error);
             }
-        } catch (error) {
-            console.error('❌ 銷毀 TaskManager 失敗:', error);
         }
     }
 
