@@ -409,7 +409,7 @@ class TaskManager {
         // 表單提交
         const form = domUtils.query('#task-form', this.container);
         if (form) {
-            eventUtils.on(form, 'submit', this.handleTaskCreate);
+            eventUtils.on(domUtils.query('#todo-form', this.container), 'submit', this.handleTaskCreate);
         }
 
         // 搜索

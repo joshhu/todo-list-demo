@@ -458,7 +458,7 @@ class TaskManager {
         }
 
         // 任務列表事件委託
-        const taskList = domUtils.query('#todo-list', this.container);
+        const taskList = domUtils.query('#task-list', this.container);
         if (taskList) {
             eventUtils.delegate(taskList, '.task-checkbox', 'click', (event) => {
                 const taskId = event.target.closest('.task-item').dataset.id;
@@ -604,7 +604,7 @@ class TaskManager {
      * 渲染任務列表
      */
     renderTaskList(tasks = this.tasks) {
-        const taskList = domUtils.query('#todo-list', this.container);
+        const taskList = domUtils.query('#task-list', this.container);
         const emptyState = domUtils.query('#empty-state', this.container);
 
         if (!taskList) return;
@@ -856,7 +856,7 @@ class TaskManager {
             this.clearForm();
 
             // 聚焦到標題輸入框
-            const titleInput = domUtils.query('#todo-input', this.container);
+            const titleInput = domUtils.query('#task-title', this.container);
             if (titleInput) {
                 titleInput.focus();
             }
@@ -1085,7 +1085,7 @@ class TaskManager {
 
         if (ctrl && key === 'n') {
             event.preventDefault();
-            const titleInput = domUtils.query('#todo-input', this.container);
+            const titleInput = domUtils.query('#task-title', this.container);
             if (titleInput) {
                 titleInput.focus();
             }
@@ -1096,7 +1096,7 @@ class TaskManager {
      * 取得表單資料
      */
     getFormData() {
-        const titleInput = domUtils.query('#todo-input', this.container);
+        const titleInput = domUtils.query('#task-title', this.container);
         const descriptionInput = domUtils.query('#task-description', this.container);
         const prioritySelect = domUtils.query('#task-priority', this.container);
         const dueDateInput = domUtils.query('#task-due-date', this.container);

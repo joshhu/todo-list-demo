@@ -856,7 +856,7 @@ class TaskManager {
             this.clearForm();
 
             // 聚焦到標題輸入框
-            const titleInput = domUtils.query('#todo-input', this.container);
+            const titleInput = domUtils.query('#task-title', this.container);
             if (titleInput) {
                 titleInput.focus();
             }
@@ -1085,7 +1085,7 @@ class TaskManager {
 
         if (ctrl && key === 'n') {
             event.preventDefault();
-            const titleInput = domUtils.query('#todo-input', this.container);
+            const titleInput = domUtils.query('#task-title', this.container);
             if (titleInput) {
                 titleInput.focus();
             }
@@ -1096,7 +1096,7 @@ class TaskManager {
      * 取得表單資料
      */
     getFormData() {
-        const titleInput = domUtils.query('#todo-input', this.container);
+        const titleInput = domUtils.query('#task-title', this.container);
         const descriptionInput = domUtils.query('#task-description', this.container);
         const prioritySelect = domUtils.query('#task-priority', this.container);
         const dueDateInput = domUtils.query('#task-due-date', this.container);
