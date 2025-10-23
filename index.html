@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="一個簡潔有效的待辦事項管理應用程式">
+    <meta name="keywords" content="待辦事項, todo, 任務管理, 生產力工具">
+    <meta name="author" content="Josh Hu">
+
+    <title>Todo List - 待辦事項管理</title>
+
+    <!-- 預載入 CSS 文件 -->
+    <link rel="preload" href="css/variables.css" as="style">
+    <link rel="preload" href="css/main.css" as="style">
+    <link rel="preload" href="css/components.css" as="style">
+
+    <!-- CSS 文件 -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <!-- 網站圖示 -->
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+
+    <!-- 漸進式網路應用程式支援 -->
+    <meta name="theme-color" content="#3498db">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <!-- 跳到主要內容的無障礙連結 -->
+    <a href="#main-content" class="skip-link">跳到主要內容</a>
+
+    <!-- 應用程式容器 -->
+    <div class="app-container" id="app">
+        <!-- 頁首 -->
+        <header class="app-header" role="banner">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <span class="app-logo">📝</span>
+                    Todo List
+                </h1>
+                <p class="app-subtitle">管理您的待辦事項，提升工作效率</p>
+            </div>
+        </header>
+
+        <!-- 主要內容區域 -->
+        <main class="app-main" id="main-content" role="main">
+            <!-- 新增任務區域 -->
+            <section class="todo-input-section" aria-labelledby="add-task-heading">
+                <h2 id="add-task-heading" class="visually-hidden">新增任務</h2>
+                <div class="todo-input-container">
+                    <form class="todo-form" id="todo-form">
+                        <div class="input-group">
+                            <label for="todo-input" class="visually-hidden">新增待辦事項</label>
+                            <input
+                                type="text"
+                                id="todo-input"
+                                class="todo-input"
+                                placeholder="新增待辦事項..."
+                                aria-label="新增待辦事項"
+                                autocomplete="off"
+                                required
+                            >
+                            <button type="submit" class="todo-submit-btn" aria-label="新增任務">
+                                <span class="btn-icon">+</span>
+                                <span class="btn-text">新增</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 篩選和統計區域 -->
+            <section class="todo-controls" aria-labelledby="filter-heading">
+                <h2 id="filter-heading" class="visually-hidden">篩選和統計</h2>
+                <div class="controls-container">
+                    <div class="filter-buttons" role="tablist" aria-label="任務篩選">
+                        <button
+                            type="button"
+                            class="filter-btn active"
+                            data-filter="all"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="todo-list"
+                        >
+                            全部
+                        </button>
+                        <button
+                            type="button"
+                            class="filter-btn"
+                            data-filter="active"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="todo-list"
+                        >
+                            進行中
+                        </button>
+                        <button
+                            type="button"
+                            class="filter-btn"
+                            data-filter="completed"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="todo-list"
+                        >
+                            已完成
+                        </button>
+                    </div>
+
+                    <div class="todo-stats" aria-live="polite">
+                        <span class="stats-text">
+                            <span id="active-count" class="count">0</span> 個進行中任務
+                        </span>
+                        <button
+                            type="button"
+                            class="clear-completed-btn"
+                            id="clear-completed"
+                            aria-label="清除所有已完成任務"
+                        >
+                            清除已完成
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 待辦事項列表 -->
+            <section class="todo-list-section" aria-labelledby="todo-list-heading">
+                <h2 id="todo-list-heading" class="visually-hidden">待辦事項列表</h2>
+                <div class="todo-list-container">
+                    <ul class="todo-list" id="todo-list" role="tabpanel">
+                        <!-- 待辦事項項目將由 JavaScript 動態生成 -->
+                    </ul>
+
+                    <!-- 空狀態提示 -->
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <h3 class="empty-title">還沒有待辦事項</h3>
+                        <p class="empty-text">開始新增您的第一個任務吧！</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 頁尾 -->
+        <footer class="app-footer" role="contentinfo">
+            <div class="footer-content">
+                <p class="footer-text">
+                    &copy; 2025 Josh Hu. 使用現代網路技術建構。
+                </p>
+                <div class="footer-links">
+                    <a href="#" class="footer-link" aria-label="查看說明文件">說明文件</a>
+                    <a href="#" class="footer-link" aria-label="提供回饋">回饋</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 載入中指示器 -->
+    <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+        <div class="loading-spinner" role="status" aria-label="載入中">
+            <span class="spinner"></span>
+            <span class="loading-text">載入中...</span>
+        </div>
+    </div>
+
+    <!-- 通知容器 -->
+    <div class="notification-container" id="notification-container" aria-live="polite"></div>
+
+    <!-- JavaScript 模組 -->
+    <script type="module" src="js/main.js"></script>
+
+    <!-- 漸進式增強 - 如果 JavaScript 載入失敗的備用方案 -->
+    <noscript>
+        <div class="noscript-warning">
+            <p>此應用程式需要啟用 JavaScript 才能正常運作。</p>
+        </div>
+    </noscript>
+</body>
+</html>

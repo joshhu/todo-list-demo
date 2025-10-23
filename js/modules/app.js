@@ -1,0 +1,637 @@
+/**
+ * 應用程式核心模組
+ * 負責應用程式的整體邏輯和協調各個模組
+ */
+
+import { APP_CONFIG, EVENT_TYPES } from '../config/settings.js';
+import { domUtils, eventUtils, performanceUtils } from './utils.js';
+import storageManager from './storage.js';
+import uiManager from './ui.js';
+
+/**
+ * 應用程式類別
+ */
+class App {
+    constructor() {
+        this.isInitialized = false;
+        this.isRunning = false;
+        this.modules = {
+            storage: storageManager,
+            ui: uiManager,
+        };
+
+        // 應用程式狀態
+        this.state = {
+            version: APP_CONFIG.version,
+            startTime: null,
+            lastActivity: null,
+            errorCount: 0,
+            isOnline: navigator.onLine,
+        };
+
+        // 繫結方法
+        this.handleOnline = this.handleOnline.bind(this);
+        this.handleOffline = this.handleOffline.bind(this);
+        this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+        this.handleBeforeUnload = this.handleBeforeUnload.bind(this);
+        this.handleError = this.handleError.bind(this);
+    }
+
+    /**
+     * 初始化應用程式
+     */
+    async initialize() {
+        try {
+            console.log('🚀 正在初始化應用程式...');
+
+            // 檢查環境
+            this.checkEnvironment();
+
+            // 初始化狀態
+            this.state.startTime = new Date();
+            this.state.lastActivity = new Date();
+
+            // 註冊全域事件監聽器
+            this.registerGlobalEventListeners();
+
+            // 初始化各個模組
+            await this.initializeModules();
+
+            // 設定自動儲存
+            this.setupAutoSave();
+
+            // 設定效能監控
+            this.setupPerformanceMonitoring();
+
+            // 設定錯誤處理
+            this.setupErrorHandling();
+
+            // 發射初始化完成事件
+            this.emitEvent(EVENT_TYPES.APP_READY, {
+                version: this.state.version,
+                modules: Object.keys(this.modules),
+            });
+
+            this.isInitialized = true;
+            this.isRunning = true;
+
+            console.log('✅ 應用程式初始化完成');
+
+        } catch (error) {
+            console.error('❌ 應用程式初始化失敗:', error);
+            this.handleCriticalError(error);
+            throw error;
+        }
+    }
+
+    /**
+     * 檢查執行環境
+     */
+    checkEnvironment() {
+        // 檢查瀏覽器支援
+        const requiredFeatures = [
+            'localStorage',
+            'querySelector',
+            'addEventListener',
+            'Promise',
+            'fetch',
+        ];
+
+        const missingFeatures = requiredFeatures.filter(feature => {
+            switch (feature) {
+                case 'localStorage':
+                    return typeof Storage === 'undefined';
+                case 'querySelector':
+                    return !document.querySelector;
+                case 'addEventListener':
+                    return !document.addEventListener;
+                case 'Promise':
+                    return typeof Promise === 'undefined';
+                case 'fetch':
+                    return typeof fetch === 'undefined';
+                default:
+                    return false;
+            }
+        });
+
+        if (missingFeatures.length > 0) {
+            throw new Error(`瀏覽器不支援以下功能: ${missingFeatures.join(', ')}`);
+        }
+
+        // 檢查本地儲存可用性
+        this.testLocalStorage();
+
+        console.log('🔍 環境檢查通過');
+    }
+
+    /**
+     * 測試本地儲存
+     */
+    testLocalStorage() {
+        try {
+            const testKey = '__localStorage_test__';
+            localStorage.setItem(testKey, 'test');
+            localStorage.removeItem(testKey);
+        } catch (error) {
+            throw new Error('本地儲存不可用，請檢查瀏覽器設定');
+        }
+    }
+
+    /**
+     * 註冊全域事件監聽器
+     */
+    registerGlobalEventListeners() {
+        // 網路狀態變更
+        eventUtils.on(window, 'online', this.handleOnline);
+        eventUtils.on(window, 'offline', this.handleOffline);
+
+        // 頁面可見性變更
+        eventUtils.on(document, 'visibilitychange', this.handleVisibilityChange);
+
+        // 頁面卸載前
+        eventUtils.on(window, 'beforeunload', this.handleBeforeUnload);
+
+        // 錯誤處理
+        eventUtils.on(window, 'error', this.handleError);
+        eventUtils.on(window, 'unhandledrejection', this.handleUnhandledRejection);
+
+        console.log('📡 全域事件監聽器已註冊');
+    }
+
+    /**
+     * 初始化各個模組
+     */
+    async initializeModules() {
+        console.log('🔧 正在初始化模組...');
+
+        // 模組已在建構函式中初始化
+        // 這裡可以執行額外的模組設定
+
+        console.log('✅ 所有模組初始化完成');
+    }
+
+    /**
+     * 設定自動儲存
+     */
+    setupAutoSave() {
+        if (!APP_CONFIG.features.autoSave.enabled) return;
+
+        const autoSaveFunction = performanceUtils.debounce(() => {
+            this.performAutoSave();
+        }, APP_CONFIG.features.autoSave.debounce);
+
+        // 監聽資料變更事件
+        eventUtils.on(window, EVENT_TYPES.TODO_ADDED, autoSaveFunction);
+        eventUtils.on(window, EVENT_TYPES.TODO_UPDATED, autoSaveFunction);
+        eventUtils.on(window, EVENT_TYPES.TODO_DELETED, autoSaveFunction);
+        eventUtils.on(window, EVENT_TYPES.TODO_COMPLETED, autoSaveFunction);
+        eventUtils.on(window, EVENT_TYPES.TODO_UNCOMPLETED, autoSaveFunction);
+
+        console.log('💾 自動儲存已設定');
+    }
+
+    /**
+     * 執行自動儲存
+     */
+    async performAutoSave() {
+        try {
+            // 模組已自動處理儲存，這裡可以執行額外邏輯
+            console.log('🔄 自動儲存完成');
+        } catch (error) {
+            console.error('自動儲存失敗:', error);
+        }
+    }
+
+    /**
+     * 設定效能監控
+     */
+    setupPerformanceMonitoring() {
+        if (!APP_CONFIG.development.performanceMonitoring.enabled) return;
+
+        // 監控頁面載入時間
+        if (performance.timing) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    this.logPerformanceMetrics();
+                }, 0);
+            });
+        }
+
+        console.log('📊 效能監控已設定');
+    }
+
+    /**
+     * 記錄效能指標
+     */
+    logPerformanceMetrics() {
+        if (!performance.timing) return;
+
+        const timing = performance.timing;
+        const metrics = {
+            // 網路時間
+            dnsLookup: timing.domainLookupEnd - timing.domainLookupStart,
+            tcpConnect: timing.connectEnd - timing.connectStart,
+            request: timing.responseStart - timing.requestStart,
+            response: timing.responseEnd - timing.responseStart,
+
+            // 處理時間
+            domProcessing: timing.domContentLoadedEventStart - timing.domLoading,
+            domComplete: timing.domComplete - timing.domLoading,
+
+            // 總時間
+            totalTime: timing.loadEventEnd - timing.navigationStart,
+        };
+
+        console.log('📈 效能指標:', metrics);
+    }
+
+    /**
+     * 設定錯誤處理
+     */
+    setupErrorHandling() {
+        // 設定全域錯誤處理
+        window.addEventListener('error', this.handleError);
+        window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
+
+        console.log('🛡️ 錯誤處理已設定');
+    }
+
+    /**
+     * 處理線上狀態
+     */
+    handleOnline() {
+        this.state.isOnline = true;
+        this.state.lastActivity = new Date();
+
+        console.log('🌐 網路已連線');
+        this.showNotification('網路已連線', 'success');
+
+        // 重新同步資料
+        this.syncData();
+    }
+
+    /**
+     * 處理離線狀態
+     */
+    handleOffline() {
+        this.state.isOnline = false;
+        this.state.lastActivity = new Date();
+
+        console.log('📡 網路已斷線');
+        this.showNotification('網路已斷線，應用程式將在離線模式下運作', 'warning');
+    }
+
+    /**
+     * 處理頁面可見性變更
+     */
+    handleVisibilityChange() {
+        this.state.lastActivity = new Date();
+
+        if (document.hidden) {
+            console.log('👁️ 頁面已隱藏');
+            // 頁面隱藏時可以執行清理工作
+        } else {
+            console.log('👁️ 頁面已顯示');
+            // 頁面顯示時可以重新整理資料
+            this.refreshData();
+        }
+    }
+
+    /**
+     * 處理頁面卸載前事件
+     */
+    handleBeforeUnload(event) {
+        // 檢查是否有未儲存的變更
+        if (this.hasUnsavedChanges()) {
+            event.preventDefault();
+            event.returnValue = '您有未儲存的變更，確定要離開嗎？';
+        }
+    }
+
+    /**
+     * 處理錯誤
+     */
+    handleError(event) {
+        this.state.errorCount++;
+        this.state.lastActivity = new Date();
+
+        const error = {
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            timestamp: new Date().toISOString(),
+        };
+
+        console.error('❌ 應用程式錯誤:', error);
+
+        // 顯示錯誤通知
+        this.showNotification('發生錯誤，請重新整理頁面', 'error');
+
+        // 記錄錯誤
+        this.logError(error);
+    }
+
+    /**
+     * 處理未處理的 Promise 拒絕
+     */
+    handleUnhandledRejection(event) {
+        this.state.errorCount++;
+        this.state.lastActivity = new Date();
+
+        const error = {
+            reason: event.reason,
+            timestamp: new Date().toISOString(),
+        };
+
+        console.error('❌ 未處理的 Promise 拒絕:', error);
+
+        // 顯示錯誤通知
+        this.showNotification('發生未預期的錯誤', 'error');
+
+        // 記錄錯誤
+        this.logError(error);
+    }
+
+    /**
+     * 處理關鍵錯誤
+     */
+    handleCriticalError(error) {
+        console.error('💥 關鍵錯誤:', error);
+
+        // 嘗試顯示錯誤頁面
+        this.showErrorPage(error);
+
+        // 停止應用程式
+        this.stop();
+    }
+
+    /**
+     * 顯示錯誤頁面
+     */
+    showErrorPage(error) {
+        const app = domUtils.query('#app');
+        if (!app) return;
+
+        const errorPage = domUtils.createElement('div', { className: 'error-page' });
+
+        const title = domUtils.createElement('h1');
+        title.textContent = '應用程式發生錯誤';
+        errorPage.appendChild(title);
+
+        const message = domUtils.createElement('p');
+        message.textContent = error.message || '發生未知錯誤';
+        errorPage.appendChild(message);
+
+        const retryBtn = domUtils.createElement('button');
+        retryBtn.textContent = '重新載入';
+        retryBtn.addEventListener('click', () => {
+            window.location.reload();
+        });
+        errorPage.appendChild(retryBtn);
+
+        app.textContent = '';
+        app.appendChild(errorPage);
+    }
+
+    /**
+     * 同步資料
+     */
+    async syncData() {
+        try {
+            console.log('🔄 正在同步資料...');
+            // 這裡可以實現與伺服器的同步邏輯
+        } catch (error) {
+            console.error('同步資料失敗:', error);
+        }
+    }
+
+    /**
+     * 重新整理資料
+     */
+    async refreshData() {
+        try {
+            console.log('🔄 正在重新整理資料...');
+            this.modules.ui.render();
+        } catch (error) {
+            console.error('重新整理資料失敗:', error);
+        }
+    }
+
+    /**
+     * 檢查是否有未儲存的變更
+     */
+    hasUnsavedChanges() {
+        // 這裡可以實現檢查邏輯
+        return false;
+    }
+
+    /**
+     * 記錄錯誤
+     */
+    logError(error) {
+        // 這裡可以實現錯誤記錄邏輯，例如發送到分析服務
+        if (APP_CONFIG.development.debug) {
+            console.error('錯誤詳情:', error);
+        }
+    }
+
+    /**
+     * 發射事件
+     */
+    emitEvent(eventName, detail = null) {
+        eventUtils.emit(document, eventName, detail);
+    }
+
+    /**
+     * 監聽事件
+     */
+    onEvent(eventName, handler) {
+        return eventUtils.on(document, eventName, handler);
+    }
+
+    /**
+     * 顯示通知
+     */
+    showNotification(message, type = 'info') {
+        if (this.modules.ui) {
+            this.modules.ui.showNotification(message, type);
+        }
+    }
+
+    /**
+     * 取得應用程式狀態
+     */
+    getState() {
+        return {
+            ...this.state,
+            isInitialized: this.isInitialized,
+            isRunning: this.isRunning,
+            uptime: this.state.startTime ? Date.now() - this.state.startTime.getTime() : 0,
+            modules: Object.keys(this.modules),
+        };
+    }
+
+    /**
+     * 取得應用程式資訊
+     */
+    getInfo() {
+        return {
+            name: APP_CONFIG.name,
+            version: APP_CONFIG.version,
+            description: APP_CONFIG.description,
+            author: APP_CONFIG.author,
+            environment: {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                online: navigator.onLine,
+                cookieEnabled: navigator.cookieEnabled,
+            },
+        };
+    }
+
+    /**
+     * 重啟應用程式
+     */
+    async restart() {
+        console.log('🔄 正在重啟應用程式...');
+
+        try {
+            await this.stop();
+            await this.initialize();
+            console.log('✅ 應用程式重啟完成');
+        } catch (error) {
+            console.error('❌ 應用程式重啟失敗:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 停止應用程式
+     */
+    async stop() {
+        console.log('🛑 正在停止應用程式...');
+
+        try {
+            this.isRunning = false;
+
+            // 執行最後一次自動儲存
+            if (APP_CONFIG.features.autoSave.enabled) {
+                await this.performAutoSave();
+            }
+
+            // 銷毀模組
+            await this.destroyModules();
+
+            // 移除事件監聽器
+            this.removeGlobalEventListeners();
+
+            console.log('✅ 應用程式已停止');
+        } catch (error) {
+            console.error('❌ 停止應用程式失敗:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 銷毀模組
+     */
+    async destroyModules() {
+        for (const [name, module] of Object.entries(this.modules)) {
+            try {
+                if (typeof module.destroy === 'function') {
+                    await module.destroy();
+                }
+                console.log(`✅ 模組 ${name} 已銷毀`);
+            } catch (error) {
+                console.error(`❌ 銷毀模組 ${name} 失敗:`, error);
+            }
+        }
+    }
+
+    /**
+     * 移除全域事件監聽器
+     */
+    removeGlobalEventListeners() {
+        window.removeEventListener('online', this.handleOnline);
+        window.removeEventListener('offline', this.handleOffline);
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+        window.removeEventListener('beforeunload', this.handleBeforeUnload);
+        window.removeEventListener('error', this.handleError);
+        window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
+
+        console.log('📡 全域事件監聽器已移除');
+    }
+
+    /**
+     * 執行健康檢查
+     */
+    async healthCheck() {
+        try {
+            const checks = {
+                localStorage: this.checkLocalStorage(),
+                modules: this.checkModules(),
+                dom: this.checkDOM(),
+                events: this.checkEvents(),
+            };
+
+            const isHealthy = Object.values(checks).every(check => check);
+
+            return {
+                healthy: isHealthy,
+                checks,
+                timestamp: new Date().toISOString(),
+            };
+        } catch (error) {
+            console.error('健康檢查失敗:', error);
+            return {
+                healthy: false,
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            };
+        }
+    }
+
+    /**
+     * 檢查本地儲存
+     */
+    checkLocalStorage() {
+        try {
+            const testKey = '__health_check__';
+            localStorage.setItem(testKey, 'test');
+            localStorage.removeItem(testKey);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * 檢查模組
+     */
+    checkModules() {
+        return Object.values(this.modules).every(module => {
+            return module && typeof module === 'object';
+        });
+    }
+
+    /**
+     * 檢查 DOM
+     */
+    checkDOM() {
+        return !!(document && document.querySelector);
+    }
+
+    /**
+     * 檢查事件系統
+     */
+    checkEvents() {
+        return !!(document && document.addEventListener && document.dispatchEvent);
+    }
+}
+
+// 建立並匯出單例實例
+const app = new App();
+
+export default app;

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模組載入測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>JavaScript 模組載入測試</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        async function testModules() {
+            try {
+                log('開始測試模組載入...', 'info');
+
+                // 測試 utils 模組
+                log('載入 utils 模組...', 'info');
+                const utils = await import('./js/modules/utils.js');
+                log('✅ utils 模組載入成功', 'success');
+
+                // 測試 utils 功能
+                if (utils.default && utils.default.stringUtils) {
+                    log('✅ utils.stringUtils 可用', 'success');
+                    const testId = utils.default.stringUtils.generateId(8);
+                    log(`生成的測試 ID: ${testId}`, 'info');
+                } else {
+                    log('❌ utils.stringUtils 不可用', 'error');
+                }
+
+                // 測試 settings 模組
+                log('載入 settings 模組...', 'info');
+                const settings = await import('./js/config/settings.js');
+                log('✅ settings 模組載入成功', 'success');
+
+                if (settings.APP_CONFIG) {
+                    log(`✅ 應用程式版本: ${settings.APP_CONFIG.version}`, 'success');
+                } else {
+                    log('❌ APP_CONFIG 不可用', 'error');
+                }
+
+                // 測試 storage 模組
+                log('載入 storage 模組...', 'info');
+                const storage = await import('./js/modules/storage.js');
+                log('✅ storage 模組載入成功', 'success');
+
+                // 測試 ui 模組
+                log('載入 ui 模組...', 'info');
+                const ui = await import('./js/modules/ui.js');
+                log('✅ ui 模組載入成功', 'success');
+
+                // 測試 app 模組
+                log('載入 app 模組...', 'info');
+                const app = await import('./js/modules/app.js');
+                log('✅ app 模組載入成功', 'success');
+
+                // 測試 main 模組
+                log('載入 main 模組...', 'info');
+                const main = await import('./js/main.js');
+                log('✅ main 模組載入成功', 'success');
+
+                log('🎉 所有模組測試完成！', 'success');
+
+            } catch (error) {
+                log(`❌ 模組測試失敗: ${error.message}`, 'error');
+                console.error('模組測試錯誤:', error);
+            }
+        }
+
+        // 開始測試
+        testModules();
+    </script>
+</body>
+</html>

@@ -1,0 +1,474 @@
+/**
+ * 應用程式設定模組
+ * 定義全域設定和配置選項
+ */
+
+// 應用程式基本設定
+export const APP_CONFIG = {
+    // 應用程式資訊
+    name: 'Todo List',
+    version: '1.0.0',
+    description: '一個簡潔有效的待辦事項管理應用程式',
+    author: 'Josh Hu',
+
+    // 本地儲存設定
+    storage: {
+        prefix: 'todo_app_',
+        key: 'todos',
+        settingsKey: 'app_settings',
+    },
+
+    // UI 設定
+    ui: {
+        // 動畫設定
+        animations: {
+            enabled: true,
+            duration: {
+                fast: 150,
+                normal: 300,
+                slow: 500,
+            },
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        },
+
+        // 通知設定
+        notifications: {
+            enabled: true,
+            duration: 5000, // 5秒
+            position: 'top-right',
+            maxCount: 5,
+        },
+
+        // 分頁設定
+        pagination: {
+            itemsPerPage: 10,
+            showNavigation: true,
+        },
+
+        // 主題設定
+        theme: {
+            default: 'auto', // 'light', 'dark', 'auto'
+            followSystem: true,
+        },
+
+        // 語言設定
+        language: {
+            default: 'zh-TW',
+            supported: ['zh-TW', 'en-US'],
+        },
+    },
+
+    // 功能設定
+    features: {
+        // 編輯功能
+        inlineEdit: true,
+        doubleClickToEdit: true,
+
+        // 篩選功能
+        filters: ['all', 'active', 'completed'],
+
+        // 排序功能
+        sortOptions: ['date', 'priority', 'name'],
+
+        // 優先級設定
+        priorities: {
+            low: { label: '低', color: 'var(--color-success)', value: 1 },
+            medium: { label: '中', color: 'var(--color-warning)', value: 2 },
+            high: { label: '高', color: 'var(--color-danger)', value: 3 },
+        },
+
+        // 自動儲存
+        autoSave: {
+            enabled: true,
+            debounce: 1000, // 1秒
+        },
+
+        // 快捷鍵
+        keyboardShortcuts: {
+            enabled: true,
+            shortcuts: {
+                'Ctrl+N': 'newTodo',
+                'Ctrl+Enter': 'saveTodo',
+                'Escape': 'cancelEdit',
+                'Delete': 'deleteSelected',
+                'Ctrl+A': 'selectAll',
+                'Ctrl+F': 'focusSearch',
+            },
+        },
+    },
+
+    // 效能設定
+    performance: {
+        // 虛擬滾動
+        virtualScrolling: {
+            enabled: false,
+            itemHeight: 60,
+            bufferSize: 10,
+        },
+
+        // 懶載入
+        lazyLoading: {
+            enabled: true,
+            threshold: 100,
+        },
+
+        // 快取設定
+        cache: {
+            enabled: true,
+            maxSize: 100, // 最大快取項目數
+            ttl: 3600000, // 1小時
+        },
+    },
+
+    // 開發設定
+    development: {
+        debug: false,
+        logging: {
+            enabled: true,
+            level: 'info', // 'debug', 'info', 'warn', 'error'
+            prefix: '[Todo App]',
+        },
+        performanceMonitoring: {
+            enabled: false,
+            sampleRate: 0.1, // 10% 採樣率
+        },
+    },
+
+    // 安全設定
+    security: {
+        // XSS 防護
+        xssProtection: {
+            enabled: true,
+            sanitizeInput: true,
+            sanitizeOutput: true,
+        },
+
+        // 內容安全政策
+        csp: {
+            enabled: false,
+            // 內容安全政策設定
+            policy: {
+                'default-src': ["'self'"],
+                'script-src': ["'self'"],
+                'style-src': ["'self'", "'unsafe-inline'"],
+                'img-src': ["'self'", 'data:', 'https:'],
+                'font-src': ["'self'"],
+                'connect-src': ["'self'"],
+            },
+        },
+    },
+
+    // 離線支援
+    offline: {
+        enabled: true,
+        serviceWorker: {
+            enabled: false,
+            script: '/sw.js',
+        },
+        cacheFirst: [
+            '/',
+            '/index.html',
+            '/css/main.css',
+            '/css/variables.css',
+            '/css/components.css',
+            '/js/main.js',
+        ],
+    },
+
+    // 分析和追蹤
+    analytics: {
+        enabled: false,
+        providers: [],
+        trackingId: null,
+        anonymizeIp: true,
+        respectDnt: true,
+    },
+
+    // 實驗性功能
+    experimental: {
+        features: {
+            aiAssist: false,
+            voiceInput: false,
+            gestureControl: false,
+            collaboration: false,
+        },
+    },
+};
+
+// 預設待辦事項資料
+export const DEFAULT_TODOS = [
+    {
+        id: 'demo-1',
+        title: '歡迎使用 Todo List 應用程式！',
+        description: '這是一個功能強大的任務管理工具，支援完整的任務生命週期管理。',
+        completed: false,
+        priority: 'medium',
+        category: 'general',
+        tags: ['welcome', 'tutorial'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'demo-2',
+        title: '探索任務功能',
+        description: '點擊左側的核取方塊來標記任務為完成，試試看各種篩選和排序功能。',
+        completed: false,
+        priority: 'low',
+        category: 'tutorial',
+        tags: ['tutorial', 'features'],
+        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1天前
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+        id: 'demo-3',
+        title: '嘗試編輯功能',
+        description: '點擊任務可以編輯詳細資訊，包括標題、描述、標籤、分類和截止日期。',
+        completed: true,
+        priority: 'high',
+        category: 'tutorial',
+        tags: ['tutorial', 'editing'],
+        createdAt: new Date(Date.now() - 172800000).toISOString(), // 2天前
+        updatedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+    },
+    {
+        id: 'demo-4',
+        title: '設定截止日期',
+        description: '為重要任務設定截止日期，系統會提醒您即將到期的任務。',
+        completed: false,
+        priority: 'high',
+        category: 'work',
+        tags: ['deadline', 'important'],
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3天後
+        createdAt: new Date(Date.now() - 43200000).toISOString(), // 12小時前
+        updatedAt: new Date(Date.now() - 43200000).toISOString(),
+    },
+    {
+        id: 'demo-5',
+        title: '整理個人任務',
+        description: '使用標籤和分類來組織您的任務，讓工作更加井然有序。',
+        completed: false,
+        priority: 'medium',
+        category: 'personal',
+        tags: ['organization', 'personal'],
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2天前
+        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+];
+
+// 錯誤訊息
+export const ERROR_MESSAGES = {
+    // 一般錯誤
+    GENERIC: '發生錯誤，請稍後再試。',
+    NETWORK: '網路連線錯誤，請檢查您的網路設定。',
+    STORAGE: '儲存空間不足或無法存取本地儲存。',
+
+    // 待辦事項錯誤
+    TODO_EMPTY: '待辦事項內容不能為空。',
+    TOO_LONG: '待辦事項內容過長，請保持在 200 字元以內。',
+    INVALID_PRIORITY: '無效的優先級設定。',
+    ALREADY_EXISTS: '此待辦事項已存在。',
+    NOT_FOUND: '找不到指定的待辦事項。',
+
+    // 權限錯誤
+    PERMISSION_DENIED: '沒有權限執行此操作。',
+    READ_ONLY: '目前為唯讀模式，無法修改內容。',
+
+    // 載入錯誤
+    LOAD_FAILED: '載入資料失敗。',
+    SAVE_FAILED: '儲存資料失敗。',
+
+    // 表單驗證
+    INVALID_INPUT: '輸入內容無效。',
+    REQUIRED_FIELD: '此欄位為必填。',
+};
+
+// 成功訊息
+export const SUCCESS_MESSAGES = {
+    TODO_ADDED: '待辦事項已成功新增！',
+    TODO_UPDATED: '待辦事項已成功更新！',
+    TODO_DELETED: '待辦事項已成功刪除！',
+    TODO_COMPLETED: '任務已完成！',
+    TODO_UNCOMPLETED: '任務標記為未完成！',
+    ALL_COMPLETED_CLEARED: '所有已完成的任務已清除！',
+    SETTINGS_SAVED: '設定已成功儲存！',
+    DATA_EXPORTED: '資料已成功匯出！',
+    DATA_IMPORTED: '資料已成功匯入！',
+};
+
+// 資料驗證規則
+export const VALIDATION_RULES = {
+    todo: {
+        text: {
+            required: true,
+            minLength: 1,
+            maxLength: 200,
+            pattern: /^.+$/,
+        },
+        priority: {
+            required: false,
+            allowedValues: ['low', 'medium', 'high'],
+            default: 'medium',
+        },
+    },
+};
+
+// 鍵盤快捷鍵對應
+export const KEYBOARD_SHORTCUTS = {
+    'Escape': 'cancel',
+    'Enter': 'confirm',
+    'Delete': 'delete',
+    'Backspace': 'delete',
+    'ArrowUp': 'navigateUp',
+    'ArrowDown': 'navigateDown',
+    'ArrowLeft': 'navigateLeft',
+    'ArrowRight': 'navigateRight',
+    'Home': 'goToStart',
+    'End': 'goToEnd',
+    'PageUp': 'pageUp',
+    'PageDown': 'pageDown',
+    'Tab': 'nextField',
+    'Shift+Tab': 'previousField',
+    ' ': 'toggleComplete',
+};
+
+// 主題色彩配置
+export const THEME_COLORS = {
+    light: {
+        primary: '#3498db',
+        secondary: '#2ecc71',
+        success: '#28a745',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        info: '#17a2b8',
+    },
+    dark: {
+        primary: '#5dade2',
+        secondary: '#58d68d',
+        success: '#58d68d',
+        warning: '#f7dc6f',
+        danger: '#ec7063',
+        info: '#5dade2',
+    },
+};
+
+// 事件類型常數
+export const EVENT_TYPES = {
+    // 應用程式事件
+    APP_READY: 'app:ready',
+    APP_ERROR: 'app:error',
+
+    // 待辦事項事件
+    TODO_ADDED: 'todo:added',
+    TODO_UPDATED: 'todo:updated',
+    TODO_DELETED: 'todo:deleted',
+    TODO_COMPLETED: 'todo:completed',
+    TODO_UNCOMPLETED: 'todo:uncompleted',
+    TODO_FILTERED: 'todo:filtered',
+    TODO_SORTED: 'todo:sorted',
+
+    // UI 事件
+    TOGGLE_THEME: 'ui:toggleTheme',
+    TOGGLE_ANIMATIONS: 'ui:toggleAnimations',
+    SHOW_NOTIFICATION: 'ui:showNotification',
+    HIDE_NOTIFICATION: 'ui:hideNotification',
+
+    // 儲存事件
+    STORAGE_CHANGED: 'storage:changed',
+    STORAGE_ERROR: 'storage:error',
+
+    // 鍵盤事件
+    KEYBOARD_SHORTCUT: 'keyboard:shortcut',
+};
+
+// 工具函數：檢查設定有效性
+export function validateSettings(settings) {
+    const errors = [];
+
+    // 檢查必要欄位
+    const requiredFields = ['name', 'version', 'storage'];
+    for (const field of requiredFields) {
+        if (!settings[field]) {
+            errors.push(`缺少必要設定欄位: ${field}`);
+        }
+    }
+
+    // 檢查儲存設定
+    if (settings.storage) {
+        if (!settings.storage.prefix || !settings.storage.key) {
+            errors.push('儲存設定不完整');
+        }
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+    };
+}
+
+// 工具函數：合併設定
+export function mergeSettings(defaultSettings, userSettings) {
+    return {
+        ...defaultSettings,
+        ...userSettings,
+        // 深度合併巢狀物件
+        ui: {
+            ...defaultSettings.ui,
+            ...(userSettings.ui || {}),
+            animations: {
+                ...defaultSettings.ui.animations,
+                ...(userSettings.ui?.animations || {}),
+            },
+            notifications: {
+                ...defaultSettings.ui.notifications,
+                ...(userSettings.ui?.notifications || {}),
+            },
+        },
+        features: {
+            ...defaultSettings.features,
+            ...(userSettings.features || {}),
+        },
+    };
+}
+
+// 工具函數：取得目前設定
+export function getCurrentSettings() {
+    try {
+        const stored = localStorage.getItem(APP_CONFIG.storage.settingsKey);
+        if (stored) {
+            const userSettings = JSON.parse(stored);
+            return mergeSettings(APP_CONFIG, userSettings);
+        }
+    } catch (error) {
+        console.warn('無法載入使用者設定，使用預設設定:', error);
+    }
+
+    return APP_CONFIG;
+}
+
+// 工具函數：儲存設定
+export function saveSettings(settings) {
+    try {
+        localStorage.setItem(
+            APP_CONFIG.storage.settingsKey,
+            JSON.stringify(settings)
+        );
+        return true;
+    } catch (error) {
+        console.error('儲存設定失敗:', error);
+        return false;
+    }
+}
+
+// 工具函數：重置為預設設定
+export function resetToDefaults() {
+    try {
+        localStorage.removeItem(APP_CONFIG.storage.settingsKey);
+        return true;
+    } catch (error) {
+        console.error('重置設定失敗:', error);
+        return false;
+    }
+}
+
+export default APP_CONFIG;

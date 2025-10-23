@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Layer Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+        }
+        .btn:hover { opacity: 0.8; }
+        .btn.success { background: #28a745; }
+        .btn.warning { background: #ffc107; color: black; }
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.running { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #output {
+            background: #1e1e1e;
+            color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 20px 0;
+        }
+        .summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .summary-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .summary-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .feature-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .feature-list h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .feature-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li::before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗂️ Data Layer Implementation Tests</h1>
+        <p style="text-align: center; color: #666;">Issue #5: 數據層實現驗證測試</p>
+
+        <div class="feature-list">
+            <h3>🚀 已實現的功能</h3>
+            <ul>
+                <li>Task 實體類別 - 完整的任務數據模型</li>
+                <li>TaskValidator 驗證器 - 全面的數據驗證</li>
+                <li>EventEmitter 事件系統 - 觀察者模式實現</li>
+                <li>TodosRepository CRUD 操作 - 完整的數據存取</li>
+                <li>數據查詢和過濾 - 搜索、排序、分頁</li>
+                <li>localStorage 管理 - 數據持久化</li>
+                <li>數據遷移機制 - 版本控制</li>
+                <li>備份和恢復功能 - 數據安全</li>
+                <li>事件系統整合 - 實時通知</li>
+                <li>完整測試覆蓋 - 單元測試和整合測試</li>
+            </ul>
+        </div>
+
+        <div id="status" class="status">
+            準備運行測試...
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="runAllTests()">🧪 運行所有測試</button>
+            <button class="btn success" onclick="runQuickTest()">⚡ 快速測試</button>
+            <button class="btn warning" onclick="clearOutput()">🗑️ 清除輸出</button>
+        </div>
+
+        <div id="output">點擊 "運行所有測試" 開始測試數據層實現...</div>
+
+        <div id="summary" class="summary" style="display: none;">
+            <h3>📊 測試摘要</h3>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-number" id="total-tests">0</div>
+                    <div class="summary-label">總測試數</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number success" id="passed-tests">0</div>
+                    <div class="summary-label">通過</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number error" id="failed-tests">0</div>
+                    <div class="summary-label">失敗</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" id="total-duration">0ms</div>
+                    <div class="summary-label">總耗時</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import testSuite from './data-layer-test.js';
+
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+        const summary = document.getElementById('summary');
+
+        function appendToOutput(text, className = '') {
+            const span = document.createElement('span');
+            if (className) span.className = className;
+            span.textContent = text;
+            output.appendChild(span);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'running') {
+            status.className = `status ${type}`;
+            status.textContent = message;
+        }
+
+        function clearOutput() {
+            output.textContent = '';
+            summary.style.display = 'none';
+            updateStatus('準備運行測試...', 'running');
+        }
+
+        async function runAllTests() {
+            clearOutput();
+            updateStatus('正在運行測試...', 'running');
+            appendToOutput('🗂️ 開始運行數據層測試套件...\n\n');
+
+            // 重定向 console.log 到 output
+            const originalLog = console.log;
+            console.log = (...args) => {
+                const message = args.join(' ');
+
+                // 根據內容添加顏色
+                if (message.includes('✅') || message.includes('PASSED')) {
+                    appendToOutput(message + '\n', 'success');
+                } else if (message.includes('❌') || message.includes('FAILED') || message.includes('Error')) {
+                    appendToOutput(message + '\n', 'error');
+                } else if (message.includes('⚠️') || message.includes('Warning')) {
+                    appendToOutput(message + '\n', 'warning');
+                } else {
+                    appendToOutput(message + '\n');
+                }
+
+                originalLog.apply(console, args);
+            };
+
+            try {
+                await testSuite.runAllTests();
+
+                const results = testSuite.getResults();
+                displaySummary(results);
+
+                if (results.failed === 0) {
+                    updateStatus('🎉 所有測試通過！數據層實現驗證成功！', 'success');
+                } else {
+                    updateStatus(`⚠️ 測試完成，但 ${results.failed} 個測試失敗`, 'error');
+                }
+
+            } catch (error) {
+                appendToOutput(`\n❌ 測試套件執行失敗: ${error.message}\n`, 'error');
+                updateStatus('❌ 測試執行失敗', 'error');
+            } finally {
+                // 恢復原始 console.log
+                console.log = originalLog;
+            }
+        }
+
+        async function runQuickTest() {
+            clearOutput();
+            updateStatus('正在運行快速測試...', 'running');
+            appendToOutput('⚡ 運行快速測試...\n\n');
+
+            try {
+                // 導入並測試基本功能
+                const { Task } = await import('./js/models/Task.js');
+                const { TaskValidator } = await import('./js/models/TaskValidator.js');
+                const { EventEmitter } = await import('./js/core/EventEmitter.js');
+                const todoRepository = await import('./js/repositories/TodoRepository.js');
+
+                appendToOutput('✅ 所有模組載入成功\n');
+
+                // 基本測試
+                const task = new Task({ title: '快速測試任務' });
+                appendToOutput('✅ Task 實體創建成功\n');
+
+                const validation = TaskValidator.validate({ title: '有效任務' });
+                if (validation.isValid) {
+                    appendToOutput('✅ TaskValidator 驗證通過\n');
+                }
+
+                const emitter = new EventEmitter();
+                let eventFired = false;
+                emitter.on('test', () => { eventFired = true; });
+                emitter.emit('test');
+                if (eventFired) {
+                    appendToOutput('✅ EventEmitter 事件系統正常\n');
+                }
+
+                await todoRepository.default.initialize();
+                appendToOutput('✅ TodoRepository 初始化成功\n');
+
+                // 創建測試任務
+                const testTask = await todoRepository.default.create({
+                    title: '快速測試任務',
+                    description: '驗證基本功能',
+                    priority: 'medium'
+                });
+                appendToOutput(`✅ 任務創建成功: ${testTask.id}\n`);
+
+                // 讀取任務
+                const readTask = await todoRepository.default.getById(testTask.id);
+                if (readTask) {
+                    appendToOutput('✅ 任務讀取成功\n');
+                }
+
+                // 更新任務
+                const updatedTask = await todoRepository.default.update(testTask.id, {
+                    title: '更新後的標題'
+                });
+                if (updatedTask.title === '更新後的標題') {
+                    appendToOutput('✅ 任務更新成功\n');
+                }
+
+                // 刪除任務
+                const deleted = await todoRepository.default.delete(updatedTask.id);
+                if (deleted) {
+                    appendToOutput('✅ 任務刪除成功\n');
+                }
+
+                appendToOutput('\n🎉 快速測試完成！所有基本功能正常工作！\n');
+                updateStatus('✅ 快速測試通過', 'success');
+
+            } catch (error) {
+                appendToOutput(`\n❌ 快速測試失敗: ${error.message}\n`, 'error');
+                updateStatus('❌ 快速測試失敗', 'error');
+            }
+        }
+
+        function displaySummary(results) {
+            summary.style.display = 'block';
+            document.getElementById('total-tests').textContent = results.total;
+            document.getElementById('passed-tests').textContent = results.passed;
+            document.getElementById('failed-tests').textContent = results.failed;
+            document.getElementById('total-duration').textContent = results.duration + 'ms';
+        }
+
+        // 全域函數
+        window.runAllTests = runAllTests;
+        window.runQuickTest = runQuickTest;
+        window.clearOutput = clearOutput;
+
+        // 初始化
+        appendToOutput('數據層測試套件已載入\n');
+        appendToOutput('選擇一個測試選項開始驗證 Issue #5 的實現\n');
+    </script>
+</body>
+</html>

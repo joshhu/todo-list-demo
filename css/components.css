@@ -1,0 +1,608 @@
+/* 組件樣式文件 */
+/* 包含所有 UI 組件的特定樣式 */
+
+/* 待辦事項輸入表單 */
+.todo-input-container {
+    background: var(--color-bg-secondary);
+    border-radius: var(--border-radius-xl);
+    padding: var(--padding-lg);
+    box-shadow: var(--shadow-lg);
+    border: var(--border-width-1) solid var(--color-border-light);
+}
+
+.todo-form {
+    width: 100%;
+}
+
+.input-group {
+    display: flex;
+    gap: var(--spacing-3);
+    align-items: stretch;
+}
+
+.todo-input {
+    flex: 1;
+    height: var(--btn-height);
+    padding: var(--form-control-padding);
+    border: var(--form-control-border);
+    border-radius: var(--form-control-radius);
+    font-size: var(--font-size-base);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: var(--transition-colors);
+    outline: none;
+}
+
+.todo-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.todo-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.todo-input:invalid {
+    border-color: var(--color-danger);
+}
+
+.todo-submit-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    height: var(--btn-height);
+    padding: var(--btn-padding);
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--btn-radius);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    transition: var(--transition-colors);
+    white-space: nowrap;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.todo-submit-btn:hover {
+    background: var(--color-primary-dark);
+    text-decoration: none;
+}
+
+.todo-submit-btn:active {
+    background: var(--color-primary-dark);
+    transform: translateY(1px);
+}
+
+.todo-submit-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.todo-submit-btn:disabled {
+    background: var(--color-gray-400);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-icon {
+    font-size: var(--font-size-lg);
+    line-height: 1;
+}
+
+.btn-text {
+    font-weight: var(--font-weight-medium);
+}
+
+/* 控制區域 */
+.controls-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-4);
+    flex-wrap: wrap;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: var(--spacing-2);
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-1);
+    border-radius: var(--border-radius-lg);
+    border: var(--border-width-1) solid var(--color-border-light);
+}
+
+.filter-btn {
+    padding: var(--spacing-3) var(--spacing-4);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-colors);
+    white-space: nowrap;
+}
+
+.filter-btn:hover {
+    color: var(--color-text-primary);
+    background: var(--color-gray-100);
+}
+
+.filter-btn.active {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.filter-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.todo-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.stats-text {
+    font-weight: var(--font-weight-medium);
+}
+
+.count {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.clear-completed-btn {
+    padding: var(--spacing-2) var(--spacing-3);
+    background: transparent;
+    color: var(--color-danger);
+    border: var(--border-width-1) solid var(--color-danger);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: var(--transition-colors);
+}
+
+.clear-completed-btn:hover {
+    background: var(--color-danger);
+    color: var(--color-white);
+    text-decoration: none;
+}
+
+.clear-completed-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.clear-completed-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 待辦事項列表 */
+.todo-list-container {
+    background: var(--color-bg-secondary);
+    border-radius: var(--border-radius-xl);
+    border: var(--border-width-1) solid var(--color-border-light);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.todo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-4);
+    border-bottom: var(--border-width-1) solid var(--color-border-light);
+    transition: var(--transition-colors);
+    gap: var(--spacing-3);
+    min-height: 60px;
+}
+
+.todo-item:last-child {
+    border-bottom: none;
+}
+
+.todo-item:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.todo-item.completed {
+    opacity: 0.7;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+}
+
+.todo-checkbox {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: var(--border-width-2) solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-bg-primary);
+    cursor: pointer;
+    transition: var(--transition-colors);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.todo-checkbox:hover {
+    border-color: var(--color-primary);
+}
+
+.todo-checkbox.checked {
+    background: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.todo-checkbox.checked::after {
+    content: '✓';
+    color: var(--color-white);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+}
+
+.todo-checkbox:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.todo-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    min-width: 0;
+}
+
+.todo-text {
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    word-break: break-word;
+    line-height: var(--line-height-normal);
+}
+
+.todo-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.todo-date {
+    font-weight: var(--font-weight-normal);
+}
+
+.todo-priority {
+    font-weight: var(--font-weight-medium);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-gray-200);
+    color: var(--color-gray-700);
+}
+
+.todo-priority.high {
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.todo-priority.medium {
+    background: var(--color-warning);
+    color: var(--color-gray-900);
+}
+
+.todo-priority.low {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.todo-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    flex-shrink: 0;
+}
+
+.todo-action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-colors);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+}
+
+.todo-action-btn:hover {
+    background: var(--color-gray-200);
+    color: var(--color-text-primary);
+}
+
+.todo-action-btn.edit:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.todo-action-btn.delete:hover {
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.todo-action-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+/* 空狀態 */
+.empty-state {
+    text-align: center;
+    padding: var(--padding-2xl);
+    color: var(--color-text-muted);
+}
+
+.empty-icon {
+    font-size: var(--font-size-5xl);
+    margin-bottom: var(--margin-4);
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--margin-3);
+}
+
+.empty-text {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+}
+
+/* 通知樣式 */
+.notification {
+    background: var(--color-white);
+    border: var(--border-width-1) solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-4);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    animation: slideIn var(--duration-normal) var(--ease-out);
+}
+
+.notification.success {
+    border-left: var(--border-width-4) solid var(--color-success);
+}
+
+.notification.error {
+    border-left: var(--border-width-4) solid var(--color-danger);
+}
+
+.notification.warning {
+    border-left: var(--border-width-4) solid var(--color-warning);
+}
+
+.notification.info {
+    border-left: var(--border-width-4) solid var(--color-info);
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+}
+
+.notification-icon {
+    font-size: var(--font-size-lg);
+    flex-shrink: 0;
+}
+
+.notification-message {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-1);
+    color: var(--color-text-primary);
+}
+
+.notification-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.notification-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--spacing-1);
+    font-size: var(--font-size-lg);
+    line-height: 1;
+}
+
+.notification-close:hover {
+    color: var(--color-text-primary);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* 編輯模式 */
+.todo-item.editing .todo-content {
+    flex: 1;
+}
+
+.todo-edit-input {
+    width: 100%;
+    height: var(--btn-height);
+    padding: var(--form-control-padding);
+    border: var(--form-control-border);
+    border-radius: var(--form-control-radius);
+    font-size: var(--font-size-base);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: var(--transition-colors);
+    outline: none;
+}
+
+.todo-edit-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .input-group {
+        flex-direction: column;
+    }
+
+    .todo-submit-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .controls-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-4);
+    }
+
+    .filter-buttons {
+        justify-content: center;
+    }
+
+    .todo-stats {
+        justify-content: center;
+        flex-direction: column;
+        gap: var(--spacing-2);
+        text-align: center;
+    }
+
+    .todo-item {
+        padding: var(--spacing-3);
+        gap: var(--spacing-2);
+    }
+
+    .todo-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .todo-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-1);
+    }
+
+    .notification {
+        margin: var(--spacing-2);
+    }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+    .notification {
+        background: var(--color-gray-800);
+        border-color: var(--color-gray-600);
+    }
+
+    .todo-checkbox {
+        border-color: var(--color-gray-600);
+    }
+
+    .todo-checkbox:hover {
+        border-color: var(--color-primary);
+    }
+
+    .todo-action-btn:hover {
+        background: var(--color-gray-700);
+    }
+}
+
+/* 高對比模式支援 */
+@media (prefers-contrast: high) {
+    .todo-item {
+        border-bottom-width: var(--border-width-2);
+    }
+
+    .todo-checkbox {
+        border-width: var(--border-width-2);
+    }
+
+    .filter-btn {
+        border: var(--border-width-2) solid transparent;
+    }
+
+    .filter-btn.active {
+        border-color: var(--color-primary);
+    }
+}
+
+/* 減少動畫偏好支援 */
+@media (prefers-reduced-motion: reduce) {
+    .notification {
+        animation: none;
+    }
+
+    @keyframes slideIn,
+    @keyframes slideOut {
+        from,
+        to {
+            transform: none;
+            opacity: 1;
+        }
+    }
+}
