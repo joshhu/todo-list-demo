@@ -215,22 +215,22 @@ localStorage.setItem('todo-settings', JSON.stringify(settings));
 ```
 
 ### 任務清單
-- [ ] **#2 - Task CRUD Operations** (8小時)
-  - 開發任務的增刪改查核心功能
-- [ ] **#3 - Project Setup** (4小時)
+- [ ] **001.md - Project Setup** (4小時, parallel: false)
   - 建立專案基礎文件結構和開發環境
-- [ ] **#4 - User Experience Enhancement** (24小時)
-  - 優化響應式設計、動畫效果和交互細節
-- [ ] **#5 - Data Layer Implementation** (6小時)
+- [ ] **002.md - Data Layer Implementation** (6小時, parallel: false)
   - 實現 localStorage 數據管理和任務模型
-- [ ] **#6 - Testing & Documentation** (32小時)
-  - 進行全面測試、性能優化和文檔編寫
-- [ ] **#7 - Task Status Management** (6小時)
-  - 實現任務完成狀態切換和視覺回饋
-- [ ] **#8 - Basic UI Framework** (8小時)
+- [ ] **003.md - Basic UI Framework** (8小時, parallel: true)
   - 建立響應式界面和基礎組件系統
-- [ ] **#9 - Task Editing & Deletion** (7小時)
+- [ ] **004.md - Task CRUD Operations** (8小時, parallel: false)
+  - 開發任務的增刪改查核心功能
+- [ ] **005.md - Task Status Management** (6小時, parallel: false)
+  - 實現任務完成狀態切換和視覺回饋
+- [ ] **006.md - Task Editing & Deletion** (7小時, parallel: false)
   - 開發任務編輯和刪除功能
+- [ ] **007.md - User Experience Enhancement** (24小時, parallel: true)
+  - 優化響應式設計、動畫效果和交互細節
+- [ ] **008.md - Testing & Documentation** (32小時, parallel: true)
+  - 進行全面測試、性能優化和文檔編寫
 
 ### 總體統計
 - **總任務數**: 8 個
