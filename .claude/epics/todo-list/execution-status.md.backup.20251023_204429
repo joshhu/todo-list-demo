@@ -6,7 +6,8 @@ branch: epic/todo-list
 # Execution Status
 
 ## Active Agents
-- 無活躍的 Agent
+- Agent-2: Issue #5 Data Layer Implementation - Starting...
+- Agent-3: Issue #8 Basic UI Framework - Starting...
 
 ## Queued Issues
 - Issue #2: Task CRUD Operations (depends on #5, #8)
@@ -17,8 +18,7 @@ branch: epic/todo-list
 
 ## Completed
 - ✅ Issue #3: Project Setup (Agent-1) - Completed at 2025-10-23T11:52:00Z
-- ✅ Issue #5: Data Layer Implementation (Agent-2) - Completed at 2025-10-23T20:45:00Z
-- ✅ Issue #8: Basic UI Framework (Agent-3) - Completed at 2025-10-23T23:30:00Z
 
 ## Ready Issues (Dependencies Met)
-- #2: Task CRUD Operations ✓ Ready to start (all dependencies completed)
+- #5: Data Layer Implementation ✓ Ready to start
+- #8: Basic UI Framework ✓ Ready to start

@@ -27,9 +27,6 @@
     <meta name="apple-mobile-web-app-title" content="Todo List">
 </head>
 <body>
-    <!-- 跳過連結 - 無障礙導航 -->
-    <a href="#main-content" class="skip-link">跳過到主要內容</a>
-
     <!-- 載入指示器 -->
     <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
         <div class="loading-spinner" aria-label="正在載入..."></div>
@@ -60,7 +57,7 @@
         </header>
 
         <!-- 主要內容區域 -->
-        <main class="app-main" role="main" id="main-content">
+        <main class="app-main" role="main">
             <div class="container">
                 <div class="main-grid">
 

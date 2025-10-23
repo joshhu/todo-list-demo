@@ -1,0 +1,465 @@
+/**
+ * 無障礙設計增強樣式
+ *
+ * 這個文件包含 WCAG 2.1 AA 標準的無障礙設計增強，
+ * 確保應用程式對所有用戶都具有良好的可訪問性。
+ */
+
+/* ========== 焦點管理 ========== */
+
+/* 增強的焦點指示器 */
+:focus-visible {
+  outline: 3px solid var(--focus-ring-color, var(--color-primary-500));
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 跳過連結 - 允許鍵盤用戶跳過導航 */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--color-primary-600);
+  color: var(--color-text-inverse);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  z-index: var(--z-index-dropdown);
+  transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* ========== 高對比模式支援 ========== */
+
+@media (prefers-contrast: high) {
+  /* 增強邊框對比度 */
+  .task-item,
+  .btn,
+  .form-input,
+  .form-textarea,
+  .form-select {
+    border-width: 2px;
+    border-color: var(--contrast-border-color);
+  }
+
+  /* 增強文字對比度 */
+  .task-title,
+  .task-description,
+  .form-label {
+    color: var(--contrast-text-color);
+  }
+
+  /* 增強焦點指示器 */
+  :focus-visible {
+    outline-width: 4px;
+    outline-color: var(--contrast-border-color);
+  }
+
+  /* 增強按鈕對比度 */
+  .btn-primary {
+    background: var(--contrast-text-color);
+    color: var(--contrast-background-color);
+    border-color: var(--contrast-border-color);
+  }
+
+  .btn-secondary {
+    background: var(--contrast-background-color);
+    color: var(--contrast-text-color);
+    border-color: var(--contrast-border-color);
+  }
+}
+
+/* ========== 減少動畫偏好設定 ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* 移除所有動畫效果 */
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* 移除過渡效果 */
+  .btn,
+  .task-item,
+  .notification,
+  .modal {
+    transition: none !important;
+  }
+
+  /* 移除載入動畫 */
+  .loading-spinner {
+    animation: none !important;
+    border: 3px solid var(--color-primary-500);
+  }
+}
+
+/* ========== 螢幕閱讀器支援 ========== */
+
+/* 視覺上隱藏但保持螢幕閱讀器可訪問 */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 僅在獲得焦點時顯示的元素 */
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+}
+
+/* 為圖標提供文字替代 */
+.icon-with-text {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.icon-with-text::before {
+  content: attr(data-icon);
+  /* 確保圖標對螢幕閱讀器有意義 */
+  speak: none;
+}
+
+/* ========== 鍵盤導航增強 ========== */
+
+/* 確保所有交互元素都可以通過鍵盤訪問 */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* 為自定義組件提供鍵盤導航 */
+.task-checkbox:focus,
+.task-action-btn:focus,
+.filter-btn:focus,
+.view-btn:focus {
+  outline: 2px solid var(--focus-ring-color, var(--color-primary-500));
+  outline-offset: 2px;
+}
+
+/* 為拖放操作提供視覺指示 */
+.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.drop-target {
+  border: 2px dashed var(--color-primary-500);
+  background: var(--color-primary-50);
+}
+
+/* ========== 色彩無障礙 ========== */
+
+/* 確保錯誤狀態不僅依賴顏色 */
+.form-group.has-error .form-input,
+.form-group.has-error .form-textarea,
+.form-group.has-error .form-select {
+  border-color: var(--color-error-500);
+  border-width: 2px;
+  background: var(--color-error-50);
+}
+
+.form-group.has-error .error-message {
+  color: var(--color-error-700);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 確保成功狀態不僅依賴顏色 */
+.success-indicator {
+  border-color: var(--color-success-500);
+  background: var(--color-success-50);
+  color: var(--color-success-700);
+}
+
+/* 確保警告狀態不僅依賴顏色 */
+.warning-indicator {
+  border-color: var(--color-warning-500);
+  background: var(--color-warning-50);
+  color: var(--color-warning-700);
+}
+
+/* ========== 表單無障礙增強 ========== */
+
+/* 為必填字段提供清晰的視覺指示 */
+.form-label .required {
+  color: var(--color-error-500);
+  font-weight: var(--font-weight-bold);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+/* 為表單驗證提供多種感官指示 */
+.form-input:invalid:not(:placeholder-shown),
+.form-textarea:invalid:not(:placeholder-shown),
+.form-select:invalid {
+  border-color: var(--color-error-500);
+  border-width: 2px;
+  background: var(--color-error-50);
+}
+
+/* 為輔助技術提供更多上下文 */
+.form-group[data-required="true"] .form-label::after {
+  content: " (必填)";
+  color: var(--color-error-500);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ========== 表格無障礙（未來功能） ========== */
+
+.table-accessible {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-accessible caption {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-4);
+  text-align: left;
+}
+
+.table-accessible th,
+.table-accessible td {
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-3);
+  text-align: left;
+}
+
+.table-accessible th {
+  background: var(--color-gray-100);
+  font-weight: var(--font-weight-semibold);
+  position: sticky;
+  top: 0;
+}
+
+/* ========== 鏈接和按鈕無障礙 ========== */
+
+/* 確保鏈接和按鈕有足夠的點擊區域 */
+.btn,
+.task-action-btn,
+.filter-btn,
+.view-btn {
+  min-height: 44px; /* WCAG 推薦的最小觸摸目標尺寸 */
+  min-width: 44px;
+}
+
+/* 為外部鏈接提供指示 */
+.external-link::after {
+  content: " (opens in a new window)";
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ========== 載入和進度指示器 ========== */
+
+/* 為載入狀態提供文字替代 */
+.loading-spinner[aria-label]::before {
+  content: attr(aria-label);
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* 進度條無障礙 */
+.progress-bar {
+  background: var(--color-gray-200);
+  border-radius: var(--radius-full);
+  height: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  background: var(--color-primary-500);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-bar[aria-valuenow][aria-valuemin][aria-valuemax] {
+  /* 確保進度條對螢幕閱讀器有意義 */
+}
+
+/* ========== 錯誤處理無障礙 ========== */
+
+/* 為錯誤訊息提供明確的指示 */
+.error-message {
+  color: var(--color-error-600);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-error-50);
+  border-left: 4px solid var(--color-error-500);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-2);
+}
+
+/* 為成功訊息提供明確的指示 */
+.success-message {
+  color: var(--color-success-600);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-success-50);
+  border-left: 4px solid var(--color-success-500);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-2);
+}
+
+/* ========== 工具提示無障礙 ========== */
+
+/* 工具提示應該可以通過鍵盤訪問 */
+.tooltip-trigger {
+  position: relative;
+  cursor: help;
+}
+
+.tooltip-trigger:hover .tooltip,
+.tooltip-trigger:focus .tooltip {
+  display: block;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-gray-900);
+  color: var(--color-text-inverse);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  z-index: var(--z-index-tooltip);
+  pointer-events: none;
+}
+
+/* ========== 模態框無障礙增強 ========== */
+
+/* 確保模態框內容可以通過鍵盤導航 */
+.modal[aria-hidden="false"] {
+  /* 確保模態框獲得焦點 */
+}
+
+.modal[aria-hidden="false"] *:focus {
+  /* 在模態框內的焦點管理 */
+}
+
+/* 為模態框背景提供適當的 ARIA 屬性 */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ========== 響應式無障礙 ========== */
+
+/* 在小螢幕上增加觸摸目標 */
+@media (max-width: 640px) {
+  .btn,
+  .task-action-btn,
+  .filter-btn,
+  .view-btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+
+  .form-input,
+  .form-textarea,
+  .form-select {
+    min-height: 48px;
+    font-size: 16px; /* 防止 iOS 縮放 */
+  }
+}
+
+/* 為橫向模式提供額外的間距 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .task-item {
+    padding: var(--spacing-2);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-2);
+  }
+}
+
+/* ========== 印刷無障礙 ========== */
+
+@media print {
+  /* 確保印刷版本的可讀性 */
+  .task-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #000;
+    margin-bottom: var(--spacing-2);
+    padding: var(--spacing-3);
+  }
+
+  .task-title {
+    font-weight: bold;
+    font-size: 14pt;
+  }
+
+  .task-description {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  /* 隱藏不必要的元素 */
+  .task-actions,
+  .bulk-actions,
+  .search-container,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  /* 確保鏈接 URL 可見 */
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
+
+/* ========== 自定義屬性無障礙 ========== */
+
+/* 為高對比主題提供變數 */
+@media (prefers-contrast: high) {
+  :root {
+    --high-contrast-bg: #ffffff;
+    --high-contrast-text: #000000;
+    --high-contrast-border: #000000;
+    --high-contrast-focus: #ff0000;
+  }
+}
+
+/* 為深色主題提供無障礙變數 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dark-bg: #1a1a1a;
+    --dark-text: #ffffff;
+    --dark-border: #ffffff;
+    --dark-focus: #ffff00;
+  }
+}

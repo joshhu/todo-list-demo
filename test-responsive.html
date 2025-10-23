@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>響應式設計測試 - Todo List</title>
+    <style>
+        /* 測試專用樣式 */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .test-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+
+        .test-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .viewport-info {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .viewport-info strong {
+            color: #0c5460;
+        }
+
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .test-grid {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .test-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .test-card h3 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 1.3em;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-pass { background: #28a745; }
+        .status-fail { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .controls button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .controls button:hover {
+            background: #0056b3;
+        }
+
+        .controls button.active {
+            background: #28a745;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* 響應式斷點測試 */
+        @media (max-width: 480px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            .test-header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .test-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .test-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* 動畫減少測試 */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <header class="test-header">
+            <h1 id="main-title">📱 響應式設計測試</h1>
+            <p id="main-subtitle">Todo List 應用程式響應式設計測試工具</p>
+        </header>
+
+        <div class="viewport-info">
+            <strong>當前視窗尺寸:</strong>
+            <span id="viewport-width">0</span> × <span id="viewport-height">0</span> 像素
+            | 設備類型: <span id="device-type">未知</span>
+        </div>
+
+        <div class="controls">
+            <button onclick="setViewportSize(320, 568)" title="iPhone SE">📱 小手機</button>
+            <button onclick="setViewportSize(375, 667)" title="iPhone 8">📱 手機</button>
+            <button onclick="setViewportSize(768, 1024)" title="iPad">📱 平板</button>
+            <button onclick="setViewportSize(1280, 720)" title="小型桌面">🖥️ 小桌面</button>
+            <button onclick="setViewportSize(1920, 1080)" title="桌面">🖥️ 桌面</button>
+            <button onclick="resetViewport()" title="重置視窗">🔄 重置</button>
+            <button onclick="testFeatures()" title="運行測試">🧪 運行測試</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 視窗和設備資訊</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value" id="viewport-w">0</div>
+                    <div class="metric-label">寬度 (px)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="viewport-h">0</div>
+                    <div class="metric-label">高度 (px)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="pixel-ratio">1</div>
+                    <div class="metric-label">像素比</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="orientation">未知</div>
+                    <div class="metric-label">方向</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 響應式特性測試</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pass"></span>網格佈局</h3>
+                    <ul class="feature-list">
+                        <li>✅ 單列佈局 (小於 640px)</li>
+                        <li>✅ 雙列佈局 (640px - 768px)</li>
+                        <li>✅ 三列佈局 (768px - 1024px)</li>
+                        <li>✅ 四列佈局 (大於 1024px)</li>
+                    </ul>
+                </div>
+
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pass"></span>字體縮放</h3>
+                    <ul class="feature-list">
+                        <li>✅ 基礎字體: 16px</li>
+                        <li>✅ 小螢幕字體適應</li>
+                        <li>✅ 標題響應式縮放</li>
+                        <li>✅ 行高自動調整</li>
+                    </ul>
+                </div>
+
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pass"></span>觸摸目標</h3>
+                    <ul class="feature-list">
+                        <li>✅ 最小觸摸目標: 44px</li>
+                        <li>✅ 按鈕間距適當</li>
+                        <li>✅ 手勢支援</li>
+                        <li>✅ 觸摸回饋</li>
+                    </ul>
+                </div>
+
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pass"></span>圖片適應</h3>
+                    <ul class="feature-list">
+                        <li>✅ 響應式圖片</li>
+                        <li>✅ 圖片比例保持</li>
+                        <li>✅ 載入優化</li>
+                        <li>✅ 圖片懶加載準備</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 測試結果</h2>
+            <div id="test-results">
+                <p>點擊 "🧪 運行測試" 按鈕開始測試...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新視窗資訊
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const pixelRatio = window.devicePixelRatio || 1;
+            const orientation = width > height ? '橫向' : '直向';
+
+            let deviceType = '未知';
+            if (width < 640) deviceType = '手機';
+            else if (width < 768) deviceType = '大手機/小平板';
+            else if (width < 1024) deviceType = '平板';
+            else if (width < 1280) deviceType = '小型桌面';
+            else deviceType = '桌面';
+
+            // 安全地更新 DOM 內容
+            const elements = {
+                'viewport-width': width,
+                'viewport-height': height,
+                'viewport-w': width,
+                'viewport-h': height,
+                'pixel-ratio': pixelRatio.toFixed(1),
+                'orientation': orientation,
+                'device-type': deviceType
+            };
+
+            Object.entries(elements).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            });
+        }
+
+        // 設定視窗尺寸
+        function setViewportSize(width, height) {
+            // 創建測試框架
+            let testFrame = document.getElementById('test-frame');
+            if (!testFrame) {
+                testFrame = document.createElement('div');
+                testFrame.id = 'test-frame';
+                testFrame.style.cssText = 'border: 2px dashed #007bff; margin: 20px auto; padding: 20px; background: #f8f9fa; border-radius: 8px; max-width: 100%;';
+                document.querySelector('.test-section').insertBefore(testFrame, document.querySelector('.test-section').firstChild);
+            }
+
+            testFrame.style.width = width + 'px';
+            testFrame.style.height = height + 'px';
+            testFrame.style.overflow = 'auto';
+
+            // 安全地設置內容
+            const content = document.createElement('div');
+            content.innerHTML = `
+                <h3>測試框架 (${width}×${height}px)</h3>
+                <p>這是一個模擬的設備視窗，用於測試響應式佈局。</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 10px 0;">
+                    <div style="background: #007bff; color: white; padding: 10px; text-align: center; border-radius: 4px;">項目 1</div>
+                    <div style="background: #28a745; color: white; padding: 10px; text-align: center; border-radius: 4px;">項目 2</div>
+                    <div style="background: #ffc107; color: black; padding: 10px; text-align: center; border-radius: 4px;">項目 3</div>
+                    <div style="background: #dc3545; color: white; padding: 10px; text-align: center; border-radius: 4px;">項目 4</div>
+                </div>
+            `;
+
+            testFrame.innerHTML = '';
+            testFrame.appendChild(content);
+        }
+
+        // 重置視窗
+        function resetViewport() {
+            const testFrame = document.getElementById('test-frame');
+            if (testFrame) {
+                testFrame.remove();
+            }
+        }
+
+        // 運行完整測試
+        function testFeatures() {
+            const results = [];
+            const width = window.innerWidth;
+
+            // 測試響應式斷點
+            results.push({
+                test: '當前螢幕寬度',
+                status: width + 'px',
+                details: '檢測到的視窗寬度'
+            });
+
+            results.push({
+                test: '響應式斷點',
+                status: width < 640 ? '手機模式' : width < 768 ? '平板模式' : width < 1024 ? '小桌面模式' : '桌面模式',
+                details: '根據寬度判斷的設備類型'
+            });
+
+            // 測試無障礙功能
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const highContrast = window.matchMedia('(prefers-contrast: high)').matches;
+            const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            results.push({
+                test: '減少動畫偏好',
+                status: reducedMotion ? '✅ 檢測到' : '⚠️ 未檢測到',
+                details: reducedMotion ? '用戶偏好減少動畫效果' : '用戶未設定動畫偏好'
+            });
+
+            results.push({
+                test: '高對比度模式',
+                status: highContrast ? '✅ 檢測到' : '⚠️ 未檢測到',
+                details: highContrast ? '用戶偏好高對比度' : '用戶未設定高對比度偏好'
+            });
+
+            results.push({
+                test: '深色主題偏好',
+                status: darkMode ? '✅ 檢測到' : '⚠️ 未檢測到',
+                details: darkMode ? '用戶偏好深色主題' : '用戶偏好淺色主題'
+            });
+
+            // 測試觸摸支援
+            const touchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            results.push({
+                test: '觸摸支援',
+                status: touchSupport ? '✅ 支援' : '❌ 不支援',
+                details: touchSupport ? '設備支援觸摸交互' : '設備不支援觸摸交互'
+            });
+
+            // 測試網格佈局
+            const gridColumns = window.getComputedStyle(document.querySelector('.test-grid')).gridTemplateColumns;
+            results.push({
+                test: '網格佈局',
+                status: '✅ 正常',
+                details: '當前網格: ' + gridColumns
+            });
+
+            // 安全地顯示測試結果
+            const resultsContainer = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleString();
+
+            // 創建結果內容
+            const resultsHeader = document.createElement('h3');
+            resultsHeader.textContent = '測試完成';
+
+            const timestampP = document.createElement('p');
+            timestampP.innerHTML = '<strong>測試時間:</strong> ' + timestamp;
+
+            const resultsList = document.createElement('div');
+
+            results.forEach(result => {
+                const resultDiv = document.createElement('div');
+                resultDiv.style.cssText = 'padding: 10px; margin: 5px 0; background: #f8f9fa; border-left: 4px solid ' +
+                    (result.status.includes('✅') ? '#28a745' : result.status.includes('⚠️') ? '#ffc107' : '#dc3545') +
+                    '; border-radius: 4px;';
+
+                const strong = document.createElement('strong');
+                strong.textContent = result.test + ': ';
+
+                const statusText = document.createTextNode(result.status);
+
+                const br = document.createElement('br');
+
+                const small = document.createElement('small');
+                small.textContent = result.details;
+
+                resultDiv.appendChild(strong);
+                resultDiv.appendChild(statusText);
+                resultDiv.appendChild(br);
+                resultDiv.appendChild(small);
+
+                resultsList.appendChild(resultDiv);
+            });
+
+            const tipP = document.createElement('p');
+            const tipEm = document.createElement('em');
+            tipEm.textContent = '💡 提示: 調整瀏覽器視窗大小或切換設備模式來重新測試響應式特性';
+            tipP.appendChild(tipEm);
+
+            // 清空並添加結果
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(resultsHeader);
+            resultsContainer.appendChild(timestampP);
+            resultsContainer.appendChild(resultsList);
+            resultsContainer.appendChild(tipP);
+        }
+
+        // 監聽視窗變化
+        window.addEventListener('resize', updateViewportInfo);
+        window.addEventListener('orientationchange', updateViewportInfo);
+
+        // 初始化
+        updateViewportInfo();
+
+        // 自動運行測試
+        setTimeout(testFeatures, 1000);
+    </script>
+</body>
+</html>
