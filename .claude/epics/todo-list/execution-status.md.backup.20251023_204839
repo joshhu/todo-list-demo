@@ -6,9 +6,10 @@ branch: epic/todo-list
 # Execution Status
 
 ## Active Agents
-- Agent-4: Issue #2 Task CRUD Operations - Starting...
+- 無活躍的 Agent
 
 ## Queued Issues
+- Issue #2: Task CRUD Operations (depends on #5, #8)
 - Issue #7: Task Status Management (depends on #2)
 - Issue #9: Task Editing & Deletion (depends on #7)
 - Issue #4: User Experience Enhancement (depends on #2, #7, #9)
@@ -20,4 +21,4 @@ branch: epic/todo-list
 - ✅ Issue #8: Basic UI Framework (Agent-3) - Completed at 2025-10-23T23:30:00Z
 
 ## Ready Issues (Dependencies Met)
-- #2: Task CRUD Operations ✓ Currently in progress
+- #2: Task CRUD Operations ✓ Ready to start (all dependencies completed)
