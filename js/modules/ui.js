@@ -1,1280 +1,867 @@
 /**
  * UI 管理模組
- *
- * 負責管理應用程式的用戶界面，包括：
- * - DOM 元素管理
- * - 事件處理
- * - 組件渲染
- * - 用戶交互
- * - 視圖更新
+ * 負責使用者介面的渲染、更新和互動處理
  */
 
-export class UI {
-  constructor(settings, utils) {
-    this.settings = settings;
-    this.utils = utils;
-    this.elements = {};
-    this.components = {};
-    this.listeners = new Map();
-    this.currentFilter = 'all';
-    this.currentSort = 'created-desc';
-    this.searchQuery = '';
-    this.selectedTasks = new Set();
-    this.storage = null; // 將在 initStorage 中設置
-  }
+import { APP_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/settings.js';
+import { dateUtils, stringUtils, domUtils, eventUtils, performanceUtils } from './utils.js';
+import storageManager from './storage.js';
 
-  /**
-   * 初始化 UI 模組
-   */
-  async initialize() {
-    try {
-      // 快取 DOM 元素
-      this.cacheElements();
+/**
+ * UI 管理器類別
+ */
+class UIManager {
+    constructor() {
+        this.elements = {};
+        this.currentFilter = 'all';
+        this.editingTodoId = null;
+        this.notifications = [];
 
-      // 初始化組件
-      this.initializeComponents();
-
-      // 綁定事件監聽器
-      this.bindEventListeners();
-
-      // 應用初始設定
-      this.applyInitialSettings();
-
-      // 監聽設定變更
-      this.bindSettingsListeners();
-
-      console.log('✅ UI 模組初始化完成');
-    } catch (error) {
-      console.error('❌ UI 模組初始化失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 快取常用的 DOM 元素
-   */
-  cacheElements() {
-    this.elements = {
-      // 表單元素
-      taskForm: document.getElementById('taskForm'),
-      titleInput: document.getElementById('taskTitle'),
-      descriptionInput: document.getElementById('taskDescription'),
-      prioritySelect: document.getElementById('taskPriority'),
-      dueDateInput: document.getElementById('taskDueDate'),
-      tagsInput: document.getElementById('taskTags'),
-      addTaskBtn: document.getElementById('addTaskBtn'),
-      clearFormBtn: document.getElementById('clearFormBtn'),
-
-      // 控制元素
-      searchInput: document.getElementById('searchInput'),
-      searchClearBtn: document.getElementById('searchClearBtn'),
-      sortSelect: document.getElementById('sortSelect'),
-      filterButtons: document.querySelectorAll('.filter-btn'),
-      viewButtons: document.querySelectorAll('.view-btn'),
-
-      // 列表元素
-      taskList: document.getElementById('taskList'),
-      taskListContainer: document.getElementById('taskListContainer'),
-      emptyState: document.getElementById('emptyState'),
-      noResults: document.getElementById('noResults'),
-
-      // 統計元素
-      totalTasksCount: document.getElementById('totalTasksCount'),
-      completedTasksCount: document.getElementById('completedTasksCount'),
-
-      // 篩選計數元素
-      filterCounts: {
-        all: document.querySelector('[data-count="all"]'),
-        active: document.querySelector('[data-count="active"]'),
-        completed: document.querySelector('[data-count="completed"]')
-      },
-
-      // 批量操作元素
-      bulkActions: document.getElementById('bulkActions'),
-      selectedCount: document.getElementById('selectedCount'),
-      selectAllBtn: document.getElementById('selectAllBtn'),
-      markCompleteBtn: document.getElementById('markCompleteBtn'),
-      deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
-
-      // 模態框元素
-      confirmModal: document.getElementById('confirmModal'),
-      confirmModalTitle: document.getElementById('confirmModalTitle'),
-      confirmModalDescription: document.getElementById('confirmModalDescription'),
-      confirmModalCancel: document.getElementById('confirmModalCancel'),
-      confirmModalConfirm: document.getElementById('confirmModalConfirm'),
-
-      // 通知容器
-      notificationContainer: document.getElementById('notificationContainer'),
-
-      // 載入指示器
-      loadingOverlay: document.getElementById('loadingOverlay'),
-
-      // 空狀態按鈕
-      emptyStateAddBtn: document.getElementById('emptyStateAddBtn')
-    };
-  }
-
-  /**
-   * 初始化組件
-   */
-  initializeComponents() {
-    // 初始化任務輸入組件
-    this.components.taskInput = new TaskInput(this.elements, this.utils);
-
-    // 初始化任務列表組件
-    this.components.taskList = new TaskList(this.elements, this.utils);
-
-    // 初始化控制組件
-    this.components.controls = new Controls(this.elements, this.utils);
-
-    // 初始化通知組件
-    this.components.notifications = new Notifications(this.elements.notificationContainer);
-
-    // 初始化狀態管理器（如果儲存模組已經可用）
-    if (this.storage) {
-      this.initializeStatusManager();
-      this.initializeProgressTracker();
-      this.initializeEditingComponents();
-    }
-  }
-
-  /**
-   * 設置儲存模組引用
-   */
-  setStorage(storage) {
-    this.storage = storage;
-
-    // 如果組件已經初始化，現在初始化狀態管理器和編輯組件
-    if (this.components.taskInput) {
-      this.initializeStatusManager();
-      this.initializeProgressTracker();
-      this.initializeEditingComponents();
-    }
-  }
-
-  /**
-   * 初始化狀態管理器
-   */
-  initializeStatusManager() {
-    if (!this.storage) return;
-
-    // 動態導入狀態管理器
-    import('../components/status-manager.js').then(({ StatusManager }) => {
-      this.components.statusManager = new StatusManager(this.elements, this.utils, this.storage);
-      this.components.statusManager.initialize().catch(error => {
-        console.error('初始化狀態管理器失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入狀態管理器失敗:', error);
-    });
-  }
-
-  /**
-   * 初始化進度追蹤器
-   */
-  initializeProgressTracker() {
-    if (!this.storage) return;
-
-    // 動態導入進度追蹤器
-    import('../components/progress-tracker.js').then(({ ProgressTracker }) => {
-      this.components.progressTracker = new ProgressTracker(this.elements, this.utils, this.storage);
-      this.components.progressTracker.initialize().catch(error => {
-        console.error('初始化進度追蹤器失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入進度追蹤器失敗:', error);
-    });
-  }
-
-  /**
-   * 初始化編輯相關組件
-   */
-  initializeEditingComponents() {
-    if (!this.storage) return;
-
-    // 初始化任務編輯器
-    import('../components/task-editor.js').then(({ TaskEditor }) => {
-      this.components.taskEditor = new TaskEditor(this.elements, this.utils, this.storage);
-      this.components.taskEditor.initialize().catch(error => {
-        console.error('初始化任務編輯器失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入任務編輯器失敗:', error);
-    });
-
-    // 初始化任務刪除器
-    import('../components/task-deleter.js').then(({ TaskDeleter }) => {
-      this.components.taskDeleter = new TaskDeleter(this.elements, this.utils, this.storage);
-      this.components.taskDeleter.initialize().catch(error => {
-        console.error('初始化任務刪除器失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入任務刪除器失敗:', error);
-    });
-
-    // 初始化編輯表單
-    import('../components/edit-form.js').then(({ EditForm }) => {
-      this.components.editForm = new EditForm(this.elements, this.utils, this.storage);
-      this.components.editForm.initialize().catch(error => {
-        console.error('初始化編輯表單失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入編輯表單失敗:', error);
-    });
-
-    // 初始化編輯歷史管理
-    import('../components/edit-history.js').then(({ EditHistory }) => {
-      this.components.editHistory = new EditHistory(this.elements, this.utils, this.storage);
-      this.components.editHistory.initialize().catch(error => {
-        console.error('初始化編輯歷史管理失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入編輯歷史管理失敗:', error);
-    });
-
-    // 初始化衝突處理機制
-    import('../components/conflict-resolver.js').then(({ ConflictResolver }) => {
-      this.components.conflictResolver = new ConflictResolver(this.elements, this.utils, this.storage);
-      this.components.conflictResolver.initialize().catch(error => {
-        console.error('初始化衝突處理機制失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入衝突處理機制失敗:', error);
-    });
-
-    // 初始化快捷鍵支援
-    import('../components/keyboard-shortcuts.js').then(({ KeyboardShortcuts }) => {
-      this.components.keyboardShortcuts = new KeyboardShortcuts(this.elements, this.utils, this.storage);
-      this.components.keyboardShortcuts.initialize().catch(error => {
-        console.error('初始化快捷鍵支援失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入快捷鍵支援失敗:', error);
-    });
-  }
-
-  /**
-   * 綁定事件監聽器
-   */
-  bindEventListeners() {
-    // 任務表單事件
-    this.bindFormEvents();
-
-    // 搜尋和篩選事件
-    this.bindSearchEvents();
-    this.bindFilterEvents();
-    this.bindSortEvents();
-
-    // 批量操作事件
-    this.bindBulkActionEvents();
-
-    // 模態框事件
-    this.bindModalEvents();
-
-    // 鍵盤快捷鍵
-    this.bindKeyboardEvents();
-
-    // 視圖切換事件
-    this.bindViewEvents();
-  }
-
-  /**
-   * 綁定表單事件
-   */
-  bindFormEvents() {
-    if (this.elements.taskForm) {
-      this.elements.taskForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleTaskSubmit();
-      });
+        // 初始化
+        this.initialize();
     }
 
-    if (this.elements.clearFormBtn) {
-      this.elements.clearFormBtn.addEventListener('click', () => {
-        this.clearTaskForm();
-      });
-    }
-
-    // 輸入驗證
-    if (this.elements.titleInput) {
-      this.elements.titleInput.addEventListener('input', (e) => {
-        this.validateTitleInput(e.target);
-      });
-    }
-  }
-
-  /**
-   * 綁定搜尋事件
-   */
-  bindSearchEvents() {
-    if (this.elements.searchInput) {
-      // 使用防抖優化搜尋性能
-      const debouncedSearch = this.utils.debounce((query) => {
-        this.handleSearch(query);
-      }, 300);
-
-      this.elements.searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        this.searchQuery = query;
-
-        // 顯示/隱藏清除按鈕
-        if (this.elements.searchClearBtn) {
-          this.elements.searchClearBtn.style.display = query ? 'block' : 'none';
-        }
-
-        debouncedSearch(query);
-      });
-    }
-
-    if (this.elements.searchClearBtn) {
-      this.elements.searchClearBtn.addEventListener('click', () => {
-        this.clearSearch();
-      });
-    }
-  }
-
-  /**
-   * 綁定篩選事件
-   */
-  bindFilterEvents() {
-    this.elements.filterButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const filter = button.dataset.filter;
-        this.setActiveFilter(filter);
-      });
-    });
-  }
-
-  /**
-   * 綁定排序事件
-   */
-  bindSortEvents() {
-    if (this.elements.sortSelect) {
-      this.elements.sortSelect.addEventListener('change', (e) => {
-        this.currentSort = e.target.value;
-        this.notifyListeners('sortChanged', this.currentSort);
-      });
-    }
-  }
-
-  /**
-   * 綁定批量操作事件
-   */
-  bindBulkActionEvents() {
-    if (this.elements.selectAllBtn) {
-      this.elements.selectAllBtn.addEventListener('click', () => {
-        this.toggleSelectAll();
-      });
-    }
-
-    if (this.elements.markCompleteBtn) {
-      this.elements.markCompleteBtn.addEventListener('click', () => {
-        this.markSelectedAsCompleted();
-      });
-    }
-
-    if (this.elements.deleteSelectedBtn) {
-      this.elements.deleteSelectedBtn.addEventListener('click', () => {
-        this.deleteSelectedTasks();
-      });
-    }
-  }
-
-  /**
-   * 綁定模態框事件
-   */
-  bindModalEvents() {
-    if (this.elements.confirmModalClose) {
-      this.elements.confirmModalClose.addEventListener('click', () => {
-        this.hideModal();
-      });
-    }
-
-    if (this.elements.confirmModalCancel) {
-      this.elements.confirmModalCancel.addEventListener('click', () => {
-        this.hideModal();
-      });
-    }
-
-    // 點擊背景關閉模態框
-    if (this.elements.confirmModal) {
-      this.elements.confirmModal.addEventListener('click', (e) => {
-        if (e.target === this.elements.confirmModal) {
-          this.hideModal();
-        }
-      });
-    }
-  }
-
-  /**
-   * 綁定鍵盤事件
-   */
-  bindKeyboardEvents() {
-    document.addEventListener('keydown', (e) => {
-      // Escape 鍵處理
-      if (e.key === 'Escape') {
-        if (this.isModalVisible()) {
-          this.hideModal();
-        } else if (this.searchQuery) {
-          this.clearSearch();
-        }
-      }
-    });
-  }
-
-  /**
-   * 綁定視圖切換事件
-   */
-  bindViewEvents() {
-    this.elements.viewButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const view = button.dataset.view;
-        this.setViewMode(view);
-      });
-    });
-  }
-
-  /**
-   * 應用初始設定
-   */
-  applyInitialSettings() {
-    // 設定預設排序方式
-    const defaultSort = this.settings.get('tasks.defaultSortBy', 'created-desc');
-    this.currentSort = defaultSort;
-    if (this.elements.sortSelect) {
-      this.elements.sortSelect.value = defaultSort;
-    }
-
-    // 設定預設視圖模式
-    const defaultView = this.settings.get('ui.viewMode', 'list');
-    this.setViewMode(defaultView);
-
-    // 設定動畫
-    const animationsEnabled = this.settings.get('ui.animations', true);
-    this.toggleAnimations(animationsEnabled);
-  }
-
-  /**
-   * 綁定設定監聽器
-   */
-  bindSettingsListeners() {
-    this.settings.onChange('ui.animations', (enabled) => {
-      this.toggleAnimations(enabled);
-    });
-
-    this.settings.onChange('ui.viewMode', (viewMode) => {
-      this.setViewMode(viewMode);
-    });
-  }
-
-  /**
-   * ========== 任務輸入處理 ==========
-   */
-
-  /**
-   * 處理任務提交
-   */
-  async handleTaskSubmit() {
-    if (!this.components.taskInput.validate()) {
-      return;
-    }
-
-    const taskData = this.components.taskInput.getTaskData();
-
-    try {
-      // 通知儲存模組添加任務
-      this.notifyListeners('taskAddRequested', taskData);
-
-      // 清空表單
-      this.clearTaskForm();
-
-      // 顯示成功通知
-      this.showNotification('任務添加成功', 'success');
-
-    } catch (error) {
-      console.error('添加任務失敗:', error);
-      this.showNotification('添加任務失敗，請重試', 'error');
-    }
-  }
-
-  /**
-   * 清空任務表單
-   */
-  clearTaskForm() {
-    this.components.taskInput.clear();
-
-    // 清除錯誤狀態
-    this.clearFormErrors();
-  }
-
-  /**
-   * 清除表單錯誤
-   */
-  clearFormErrors() {
-    const errorElements = this.elements.taskForm.querySelectorAll('.has-error');
-    errorElements.forEach(element => {
-      element.classList.remove('has-error');
-    });
-
-    const errorMessages = this.elements.taskForm.querySelectorAll('.error-message');
-    errorMessages.forEach(element => {
-      element.textContent = '';
-    });
-  }
-
-  /**
-   * 驗證標題輸入
-   * @param {HTMLInputElement} input - 輸入元素
-   */
-  validateTitleInput(input) {
-    const validation = this.utils.validateTaskTitle(input.value);
-    const formGroup = input.closest('.form-group');
-    const errorElement = formGroup.querySelector('.error-message');
-
-    if (validation.isValid) {
-      formGroup.classList.remove('has-error');
-      errorElement.textContent = '';
-    } else {
-      formGroup.classList.add('has-error');
-      errorElement.textContent = validation.message;
-    }
-
-    return validation.isValid;
-  }
-
-  /**
-   * ========== 搜尋和篩選處理 ==========
-   */
-
-  /**
-   * 處理搜尋
-   * @param {string} query - 搜尋查詢
-   */
-  handleSearch(query) {
-    this.notifyListeners('searchChanged', {
-      query,
-      filter: this.currentFilter,
-      sort: this.currentSort
-    });
-  }
-
-  /**
-   * 清除搜尋
-   */
-  clearSearch() {
-    if (this.elements.searchInput) {
-      this.elements.searchInput.value = '';
-    }
-    this.searchQuery = '';
-
-    if (this.elements.searchClearBtn) {
-      this.elements.searchClearBtn.style.display = 'none';
-    }
-
-    this.handleSearch('');
-  }
-
-  /**
-   * 設定活動篩選器
-   * @param {string} filter - 篩選器類型
-   */
-  setActiveFilter(filter) {
-    this.currentFilter = filter;
-
-    // 更新按鈕狀態
-    this.elements.filterButtons.forEach(button => {
-      const isActive = button.dataset.filter === filter;
-      button.classList.toggle('active', isActive);
-      button.setAttribute('aria-selected', isActive);
-    });
-
-    // 通知其他組件
-    this.notifyListeners('filterChanged', {
-      filter,
-      query: this.searchQuery,
-      sort: this.currentSort
-    });
-  }
-
-  /**
-   * ========== 任務列表管理 ==========
-   */
-
-  /**
-   * 渲染任務列表
-   * @param {Array} tasks - 任務陣列
-   */
-  renderTasks(tasks) {
-    this.components.taskList.render(tasks);
-
-    // 更新統計資訊
-    this.updateTaskStats(tasks);
-
-    // 更新篩選計數
-    this.updateFilterCounts();
-
-    // 顯示/隱藏空狀態
-    this.toggleEmptyState(tasks.length === 0);
-  }
-
-  /**
-   * 更新任務統計
-   * @param {Array} tasks - 任務陣列
-   */
-  updateTaskStats(tasks) {
-    const total = tasks.length;
-    const completed = tasks.filter(task => task.status === 'completed').length;
-
-    if (this.elements.totalTasksCount) {
-      this.elements.totalTasksCount.textContent = total;
-    }
-
-    if (this.elements.completedTasksCount) {
-      this.elements.completedTasksCount.textContent = completed;
-    }
-  }
-
-  /**
-   * 更新篩選計數
-   */
-  updateFilterCounts() {
-    // 這需要從儲存模組獲取實際數據
-    this.notifyListeners('requestFilterCounts');
-  }
-
-  /**
-   * 設定篩選計數
-   * @param {Object} counts - 計數對象
-   */
-  setFilterCounts(counts) {
-    if (this.elements.filterCounts.all) {
-      this.elements.filterCounts.all.textContent = counts.all;
-    }
-    if (this.elements.filterCounts.active) {
-      this.elements.filterCounts.active.textContent = counts.active;
-    }
-    if (this.elements.filterCounts.completed) {
-      this.elements.filterCounts.completed.textContent = counts.completed;
-    }
-  }
-
-  /**
-   * 切換空狀態顯示
-   * @param {boolean} show - 是否顯示
-   */
-  toggleEmptyState(show) {
-    const hasSearch = this.searchQuery.length > 0;
-
-    if (show && !hasSearch) {
-      // 顯示空狀態
-      if (this.elements.emptyState) {
-        this.elements.emptyState.style.display = 'block';
-      }
-      if (this.elements.noResults) {
-        this.elements.noResults.style.display = 'none';
-      }
-    } else if (show && hasSearch) {
-      // 顯示無搜尋結果
-      if (this.elements.emptyState) {
-        this.elements.emptyState.style.display = 'none';
-      }
-      if (this.elements.noResults) {
-        this.elements.noResults.style.display = 'block';
-      }
-    } else {
-      // 隱藏所有空狀態
-      if (this.elements.emptyState) {
-        this.elements.emptyState.style.display = 'none';
-      }
-      if (this.elements.noResults) {
-        this.elements.noResults.style.display = 'none';
-      }
-    }
-  }
-
-  /**
-   * ========== 視圖管理 ==========
-   */
-
-  /**
-   * 設定視圖模式
-   * @param {string} mode - 視圖模式 ('list' 或 'grid')
-   */
-  setViewMode(mode) {
-    // 更新按鈕狀態
-    this.elements.viewButtons.forEach(button => {
-      const isActive = button.dataset.view === mode;
-      button.classList.toggle('active', isActive);
-    });
-
-    // 更新列表樣式
-    if (this.elements.taskList) {
-      this.elements.taskList.className = `task-list view-${mode}`;
-    }
-
-    // 儲存設定
-    this.settings.set('ui.viewMode', mode);
-  }
-
-  /**
-   * ========== 批量操作 ==========
-   */
-
-  /**
-   * 切換選取所有任務
-   */
-  toggleSelectAll() {
-    const allTasks = this.components.taskList.getAllTaskElements();
-    const allSelected = this.selectedTasks.size === allTasks.length;
-
-    if (allSelected) {
-      // 取消選取所有
-      this.clearSelection();
-    } else {
-      // 選取所有
-      this.selectAllTasks();
-    }
-
-    this.updateBulkActionsUI();
-  }
-
-  /**
-   * 選取所有任務
-   */
-  selectAllTasks() {
-    const allTasks = this.components.taskList.getAllTaskElements();
-    allTasks.forEach(taskElement => {
-      const taskId = taskElement.dataset.taskId;
-      if (taskId) {
-        this.selectedTasks.add(taskId);
-        taskElement.classList.add('selected');
-      }
-    });
-  }
-
-  /**
-   * 清除選取
-   */
-  clearSelection() {
-    this.selectedTasks.clear();
-    const selectedElements = this.elements.taskList.querySelectorAll('.task-item.selected');
-    selectedElements.forEach(element => {
-      element.classList.remove('selected');
-    });
-  }
-
-  /**
-   * 切換任務選取狀態
-   * @param {string} taskId - 任務 ID
-   * @param {HTMLElement} taskElement - 任務元素
-   */
-  toggleTaskSelection(taskId, taskElement) {
-    if (this.selectedTasks.has(taskId)) {
-      this.selectedTasks.delete(taskId);
-      taskElement.classList.remove('selected');
-    } else {
-      this.selectedTasks.add(taskId);
-      taskElement.classList.add('selected');
-    }
-
-    this.updateBulkActionsUI();
-  }
-
-  /**
-   * 更新批量操作 UI
-   */
-  updateBulkActionsUI() {
-    const hasSelection = this.selectedTasks.size > 0;
-
-    if (this.elements.bulkActions) {
-      this.elements.bulkActions.style.display = hasSelection ? 'block' : 'none';
-    }
-
-    if (this.elements.selectedCount) {
-      this.elements.selectedCount.textContent = this.selectedTasks.size;
-    }
-
-    // 更新全選按鈕文字
-    if (this.elements.selectAllBtn) {
-      const allTasks = this.components.taskList.getAllTaskElements();
-      const allSelected = this.selectedTasks.size === allTasks.length && allTasks.length > 0;
-      this.elements.selectAllBtn.textContent = allSelected ? '取消全選' : '全選';
-    }
-  }
-
-  /**
-   * 標記選取的任務為已完成
-   */
-  markSelectedAsCompleted() {
-    if (this.selectedTasks.size === 0) return;
-
-    const taskIds = Array.from(this.selectedTasks);
-    this.notifyListeners('tasksStatusUpdateRequested', {
-      taskIds,
-      status: 'completed'
-    });
-
-    this.clearSelection();
-    this.updateBulkActionsUI();
-  }
-
-  /**
-   * 刪除選取的任務
-   */
-  deleteSelectedTasks() {
-    if (this.selectedTasks.size === 0) return;
-
-    this.showConfirmDialog(
-      '確認刪除',
-      `確定要刪除選取的 ${this.selectedTasks.size} 項任務嗎？此操作無法復原。`,
-      () => {
-        const taskIds = Array.from(this.selectedTasks);
-        this.notifyListeners('tasksDeleteRequested', taskIds);
-        this.clearSelection();
-        this.updateBulkActionsUI();
-      }
-    );
-  }
-
-  /**
-   * ========== 模態框管理 ==========
-   */
-
-  /**
-   * 顯示確認對話框
-   * @param {string} title - 標題
-   * @param {string} description - 描述
-   * @param {Function} onConfirm - 確認回調
-   * @param {Function} onCancel - 取消回調
-   */
-  showConfirmDialog(title, description, onConfirm, onCancel = null) {
-    if (!this.elements.confirmModal) return;
-
-    // 設定內容
-    if (this.elements.confirmModalTitle) {
-      this.elements.confirmModalTitle.textContent = title;
-    }
-    if (this.elements.confirmModalDescription) {
-      this.elements.confirmModalDescription.textContent = description;
-    }
-
-    // 綁定事件
-    const confirmHandler = () => {
-      this.hideModal();
-      if (onConfirm) onConfirm();
-    };
-
-    const cancelHandler = () => {
-      this.hideModal();
-      if (onCancel) onCancel();
-    };
-
-    // 移除舊的事件監聽器
-    if (this.elements.confirmModalConfirm) {
-      this.elements.confirmModalConfirm.replaceWith(
-        this.elements.confirmModalConfirm.cloneNode(true)
-      );
-      this.elements.confirmModalConfirm = document.getElementById('confirmModalConfirm');
-      this.elements.confirmModalConfirm.addEventListener('click', confirmHandler);
-    }
-
-    if (this.elements.confirmModalCancel) {
-      this.elements.confirmModalCancel.replaceWith(
-        this.elements.confirmModalCancel.cloneNode(true)
-      );
-      this.elements.confirmModalCancel = document.getElementById('confirmModalCancel');
-      this.elements.confirmModalCancel.addEventListener('click', cancelHandler);
-    }
-
-    // 顯示模態框
-    this.elements.confirmModal.setAttribute('aria-hidden', 'false');
-    this.elements.confirmModal.querySelector('.modal').focus();
-  }
-
-  /**
-   * 隱藏模態框
-   */
-  hideModal() {
-    if (this.elements.confirmModal) {
-      this.elements.confirmModal.setAttribute('aria-hidden', 'true');
-    }
-  }
-
-  /**
-   * 檢查模態框是否可見
-   * @returns {boolean}
-   */
-  isModalVisible() {
-    return this.elements.confirmModal &&
-           this.elements.confirmModal.getAttribute('aria-hidden') === 'false';
-  }
-
-  /**
-   * ========== 通知系統 ==========
-   */
-
-  /**
-   * 顯示通知
-   * @param {string} message - 訊息
-   * @param {string} type - 類型 ('success', 'error', 'warning', 'info')
-   * @param {string} title - 標題（可選）
-   */
-  showNotification(message, type = 'info', title = null) {
-    this.components.notifications.show(message, type, title);
-  }
-
-  /**
-   * ========== 動畫和效果 ==========
-   */
-
-  /**
-   * 切換動畫
-   * @param {boolean} enabled - 是否啟用
-   */
-  toggleAnimations(enabled) {
-    const root = document.documentElement;
-    if (enabled) {
-      root.style.removeProperty('--transition-duration');
-    } else {
-      root.style.setProperty('--transition-duration', '0s');
-    }
-  }
-
-  /**
-   * ========== 事件系統 ==========
-   */
-
-  /**
-   * 監聽 UI 事件
-   * @param {string} event - 事件名稱
-   * @param {Function} callback - 回調函數
-   * @returns {Function} 取消監聽的函數
-   */
-  on(event, callback) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-
-    this.listeners.get(event).add(callback);
-
-    return () => {
-      const eventListeners = this.listeners.get(event);
-      if (eventListeners) {
-        eventListeners.delete(callback);
-        if (eventListeners.size === 0) {
-          this.listeners.delete(event);
-        }
-      }
-    };
-  }
-
-  /**
-   * 通知事件監聽器
-   * @param {string} event - 事件名稱
-   * @param {...*} args - 事件參數
-   */
-  notifyListeners(event, ...args) {
-    if (this.listeners.has(event)) {
-      this.listeners.get(event).forEach(callback => {
+    /**
+     * 初始化 UI 管理器
+     */
+    initialize() {
         try {
-          callback(...args);
+            // 快取 DOM 元素
+            this.cacheElements();
+
+            // 繫結事件監聽器
+            this.bindEvents();
+
+            // 初始化主題
+            this.initializeTheme();
+
+            // 初始化載入狀態
+            this.setLoading(false);
+
+            console.log('UI 管理器初始化完成');
         } catch (error) {
-          console.error(`UI 事件監聽器執行失敗 (${event}):`, error);
+            console.error('UI 管理器初始化失敗:', error);
+            this.showNotification('應用程式初始化失敗', 'error');
         }
-      });
     }
-  }
 
-  /**
-   * ========== 清理資源 ==========
-   */
+    /**
+     * 快取 DOM 元素
+     */
+    cacheElements() {
+        this.elements = {
+            // 表單相關
+            app: domUtils.query('#app'),
+            todoForm: domUtils.query('#todo-form'),
+            todoInput: domUtils.query('#todo-input'),
+            todoSubmitBtn: domUtils.query('.todo-submit-btn'),
 
-  /**
-   * 清理 UI 模組
-   */
-  destroy() {
-    this.listeners.clear();
-    this.selectedTasks.clear();
+            // 列表相關
+            todoList: domUtils.query('#todo-list'),
+            emptyState: domUtils.query('#empty-state'),
 
-    // 清理組件
-    Object.values(this.components).forEach(component => {
-      if (component.destroy) {
-        component.destroy();
-      }
-    });
+            // 控制相關
+            filterButtons: domUtils.queryAll('.filter-btn'),
+            activeCount: domUtils.query('#active-count'),
+            clearCompletedBtn: domUtils.query('#clear-completed'),
 
-    console.log('🧹 UI 模組已清理');
-  }
-}
+            // 通知相關
+            notificationContainer: domUtils.query('#notification-container'),
 
-/**
- * 任務輸入組件
- */
-class TaskInput {
-  constructor(elements, utils) {
-    this.elements = elements;
-    this.utils = utils;
-  }
+            // 載入相關
+            loadingOverlay: domUtils.query('#loading-overlay'),
+        };
 
-  validate() {
-    let isValid = true;
+        // 驗證必要元素是否存在
+        const requiredElements = ['app', 'todoForm', 'todoInput', 'todoList'];
+        const missing = requiredElements.filter(key => !this.elements[key]);
 
-    // 驗證標題
-    if (this.elements.titleInput) {
-      const titleValidation = this.utils.validateTaskTitle(this.elements.titleInput.value);
-      if (!titleValidation.isValid) {
-        const formGroup = this.elements.titleInput.closest('.form-group');
-        formGroup.classList.add('has-error');
-        const errorElement = formGroup.querySelector('.error-message');
-        if (errorElement) {
-          errorElement.textContent = titleValidation.message;
+        if (missing.length > 0) {
+            throw new Error(`缺少必要的 DOM 元素: ${missing.join(', ')}`);
         }
-        isValid = false;
-      }
     }
 
-    return isValid;
-  }
+    /**
+     * 繫結事件監聽器
+     */
+    bindEvents() {
+        // 表單提交事件
+        eventUtils.on(this.elements.todoForm, 'submit', (event) => {
+            event.preventDefault();
+            this.handleAddTodo();
+        });
 
-  getTaskData() {
-    const tags = this.elements.tagsInput.value
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
+        // 篩選按鈕事件
+        this.elements.filterButtons.forEach(button => {
+            eventUtils.on(button, 'click', () => {
+                this.handleFilterChange(button.dataset.filter);
+            });
+        });
 
-    return {
-      title: this.elements.titleInput.value.trim(),
-      description: this.elements.descriptionInput.value.trim(),
-      priority: this.elements.prioritySelect.value,
-      dueDate: this.elements.dueDateInput.value || null,
-      tags
-    };
-  }
+        // 清除已完成按鈕事件
+        if (this.elements.clearCompletedBtn) {
+            eventUtils.on(this.elements.clearCompletedBtn, 'click', () => {
+                this.handleClearCompleted();
+            });
+        }
 
-  clear() {
-    if (this.elements.taskForm) {
-      this.elements.taskForm.reset();
+        // 待辦事項列表事件委託
+        eventUtils.delegate(this.elements.todoList, '.todo-checkbox', 'click', (event) => {
+            const todoId = event.target.closest('.todo-item').dataset.id;
+            this.handleToggleComplete(todoId);
+        });
+
+        eventUtils.delegate(this.elements.todoList, '.todo-edit-btn', 'click', (event) => {
+            const todoId = event.target.closest('.todo-item').dataset.id;
+            this.handleStartEdit(todoId);
+        });
+
+        eventUtils.delegate(this.elements.todoList, '.todo-delete-btn', 'click', (event) => {
+            const todoId = event.target.closest('.todo-item').dataset.id;
+            this.handleDeleteTodo(todoId);
+        });
+
+        // 鍵盤事件
+        eventUtils.on(document, 'keydown', (event) => {
+            this.handleKeyboardShortcut(event);
+        });
+
+        // 窗口事件
+        eventUtils.on(window, 'resize', performanceUtils.debounce(() => {
+            this.handleResize();
+        }, 250));
+
+        // 儲存變更事件
+        eventUtils.on(window, 'storage', (event) => {
+            if (event.key === `${APP_CONFIG.storage.prefix}${APP_CONFIG.storage.key}`) {
+                this.render();
+            }
+        });
     }
-    this.clearErrors();
-  }
 
-  clearErrors() {
-    const errorGroups = this.elements.taskForm.querySelectorAll('.form-group.has-error');
-    errorGroups.forEach(group => {
-      group.classList.remove('has-error');
-    });
+    /**
+     * 初始化主題
+     */
+    initializeTheme() {
+        const theme = localStorage.getItem('todo_theme') || APP_CONFIG.ui.theme.default;
+        this.setTheme(theme);
+    }
 
-    const errorMessages = this.elements.taskForm.querySelectorAll('.error-message');
-    errorMessages.forEach(message => {
-      message.textContent = '';
-    });
-  }
+    /**
+     * 設定主題
+     */
+    setTheme(theme) {
+        const body = document.body;
+
+        // 移除所有主題類別
+        body.classList.remove('theme-light', 'theme-dark');
+
+        if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            body.classList.add('theme-dark');
+        } else {
+            body.classList.add('theme-light');
+        }
+
+        localStorage.setItem('todo_theme', theme);
+    }
+
+    /**
+     * 設定載入狀態
+     */
+    setLoading(isLoading) {
+        if (this.elements.loadingOverlay) {
+            this.elements.loadingOverlay.setAttribute('aria-hidden', !isLoading);
+        }
+    }
+
+    /**
+     * 渲染整個應用程式 UI
+     */
+    render() {
+        try {
+            this.setLoading(true);
+
+            // 取得待辦事項資料
+            const todos = this.getFilteredTodos();
+
+            // 渲染待辦事項列表
+            this.renderTodoList(todos);
+
+            // 更新統計資訊
+            this.updateStats();
+
+            // 更新空狀態顯示
+            this.updateEmptyState(todos.length);
+
+            // 更新清除按鈕狀態
+            this.updateClearButton();
+
+        } catch (error) {
+            console.error('渲染 UI 失敗:', error);
+            this.showNotification('渲染介面時發生錯誤', 'error');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    /**
+     * 取得篩選後的待辦事項
+     */
+    getFilteredTodos() {
+        const allTodos = storageManager.getAll();
+
+        switch (this.currentFilter) {
+            case 'active':
+                return allTodos.filter(todo => !todo.completed);
+            case 'completed':
+                return allTodos.filter(todo => todo.completed);
+            default:
+                return allTodos;
+        }
+    }
+
+    /**
+     * 渲染待辦事項列表
+     */
+    renderTodoList(todos) {
+        if (!this.elements.todoList) return;
+
+        // 清空列表
+        this.elements.todoList.textContent = '';
+
+        // 排序待辦事項
+        const sortedTodos = this.sortTodos(todos);
+
+        // 渲染每個待辦事項
+        sortedTodos.forEach(todo => {
+            const todoElement = this.createTodoElement(todo);
+            this.elements.todoList.appendChild(todoElement);
+        });
+    }
+
+    /**
+     * 排序待辦事項
+     */
+    sortTodos(todos) {
+        return [...todos].sort((a, b) => {
+            // 未完成的排前面
+            if (a.completed !== b.completed) {
+                return a.completed ? 1 : -1;
+            }
+
+            // 按優先級排序
+            const priorityOrder = { high: 3, medium: 2, low: 1 };
+            const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+            if (priorityDiff !== 0) {
+                return priorityDiff;
+            }
+
+            // 按建立時間排序（新的排前面）
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+    }
+
+    /**
+     * 建立待辦事項元素
+     */
+    createTodoElement(todo) {
+        const isEditing = this.editingTodoId === todo.id;
+
+        const element = domUtils.createElement('li', {
+            className: `todo-item ${todo.completed ? 'completed' : ''} ${isEditing ? 'editing' : ''}`,
+            'data-id': todo.id,
+            'data-completed': todo.completed,
+        });
+
+        if (isEditing) {
+            this.appendEditTodoContent(element, todo);
+        } else {
+            this.appendTodoContent(element, todo);
+        }
+
+        return element;
+    }
+
+    /**
+     * 附加待辦事項內容
+     */
+    appendTodoContent(element, todo) {
+        const priorityClass = `priority-${todo.priority}`;
+        const priorityLabel = APP_CONFIG.features.priorities[todo.priority]?.label || todo.priority;
+        const relativeTime = dateUtils.getRelativeTime(new Date(todo.createdAt));
+
+        // 核取方塊
+        const checkbox = domUtils.createElement('div', {
+            className: `todo-checkbox ${todo.completed ? 'checked' : ''}`,
+            role: 'button',
+            tabIndex: '0',
+            'aria-label': todo.completed ? '標記為未完成' : '標記為已完成',
+            'aria-checked': todo.completed,
+        });
+        element.appendChild(checkbox);
+
+        // 內容區域
+        const content = domUtils.createElement('div', { className: 'todo-content' });
+
+        // 文字內容
+        const text = domUtils.createElement('div', { className: 'todo-text' });
+        text.textContent = todo.text;
+        content.appendChild(text);
+
+        // 元資料
+        const meta = domUtils.createElement('div', { className: 'todo-meta' });
+
+        const date = domUtils.createElement('span', { className: 'todo-date' });
+        date.textContent = relativeTime;
+        meta.appendChild(date);
+
+        const priority = domUtils.createElement('span', {
+            className: `todo-priority ${priorityClass}`,
+        });
+        priority.textContent = priorityLabel;
+        meta.appendChild(priority);
+
+        content.appendChild(meta);
+        element.appendChild(content);
+
+        // 操作按鈕
+        const actions = domUtils.createElement('div', { className: 'todo-actions' });
+
+        const editBtn = domUtils.createElement('button', {
+            className: 'todo-action-btn edit',
+            'aria-label': '編輯待辦事項',
+            title: '編輯',
+        });
+        editBtn.textContent = '✏️';
+        actions.appendChild(editBtn);
+
+        const deleteBtn = domUtils.createElement('button', {
+            className: 'todo-action-btn delete',
+            'aria-label': '刪除待辦事項',
+            title: '刪除',
+        });
+        deleteBtn.textContent = '🗑️';
+        actions.appendChild(deleteBtn);
+
+        element.appendChild(actions);
+    }
+
+    /**
+     * 附加編輯待辦事項內容
+     */
+    appendEditTodoContent(element, todo) {
+        const editForm = domUtils.createElement('div', { className: 'todo-edit-form' });
+
+        // 輸入框
+        const input = domUtils.createElement('input', {
+            type: 'text',
+            className: 'todo-edit-input',
+            value: todo.text,
+            placeholder: '待辦事項內容...',
+            'aria-label': '編輯待辦事項',
+        });
+        editForm.appendChild(input);
+
+        // 優先級選擇
+        const prioritySelect = domUtils.createElement('select', {
+            className: 'todo-edit-priority',
+            'aria-label': '選擇優先級',
+        });
+
+        const priorities = [
+            { value: 'low', label: '低' },
+            { value: 'medium', label: '中' },
+            { value: 'high', label: '高' },
+        ];
+
+        priorities.forEach(({ value, label }) => {
+            const option = domUtils.createElement('option', { value });
+            option.textContent = label;
+            if (todo.priority === value) {
+                option.selected = true;
+            }
+            prioritySelect.appendChild(option);
+        });
+
+        editForm.appendChild(prioritySelect);
+
+        // 操作按鈕
+        const editActions = domUtils.createElement('div', { className: 'todo-edit-actions' });
+
+        const saveBtn = domUtils.createElement('button', {
+            className: 'todo-edit-save',
+            'aria-label': '儲存編輯',
+        });
+        saveBtn.textContent = '儲存';
+        editActions.appendChild(saveBtn);
+
+        const cancelBtn = domUtils.createElement('button', {
+            className: 'todo-edit-cancel',
+            'aria-label': '取消編輯',
+        });
+        cancelBtn.textContent = '取消';
+        editActions.appendChild(cancelBtn);
+
+        editForm.appendChild(editActions);
+        element.appendChild(editForm);
+    }
+
+    /**
+     * 更新統計資訊
+     */
+    updateStats() {
+        if (!this.elements.activeCount) return;
+
+        const activeTodos = storageManager.getAll().filter(todo => !todo.completed);
+        this.elements.activeCount.textContent = activeTodos.length;
+    }
+
+    /**
+     * 更新空狀態顯示
+     */
+    updateEmptyState(todoCount) {
+        if (!this.elements.emptyState || !this.elements.todoList) return;
+
+        const hasTodos = todoCount > 0;
+        this.elements.emptyState.style.display = hasTodos ? 'none' : 'block';
+        this.elements.todoList.style.display = hasTodos ? 'block' : 'none';
+    }
+
+    /**
+     * 更新清除按鈕狀態
+     */
+    updateClearButton() {
+        if (!this.elements.clearCompletedBtn) return;
+
+        const completedTodos = storageManager.getAll().filter(todo => todo.completed);
+        const hasCompleted = completedTodos.length > 0;
+
+        this.elements.clearCompletedBtn.disabled = !hasCompleted;
+        this.elements.clearCompletedBtn.style.display = hasCompleted ? 'block' : 'none';
+    }
+
+    /**
+     * 處理新增待辦事項
+     */
+    async handleAddTodo() {
+        try {
+            const input = this.elements.todoInput;
+            const text = input.value.trim();
+
+            if (!text) {
+                this.showNotification(ERROR_MESSAGES.TODO_EMPTY, 'warning');
+                return;
+            }
+
+            if (text.length > 200) {
+                this.showNotification(ERROR_MESSAGES.TOO_LONG, 'warning');
+                return;
+            }
+
+            // 建立新待辦事項
+            const todoData = {
+                text,
+                priority: 'medium',
+            };
+
+            const newTodo = await storageManager.add(todoData);
+
+            // 清空輸入框
+            input.value = '';
+            input.focus();
+
+            // 重新渲染
+            this.render();
+
+            // 顯示成功通知
+            this.showNotification(SUCCESS_MESSAGES.TODO_ADDED, 'success');
+
+        } catch (error) {
+            console.error('新增待辦事項失敗:', error);
+            this.showNotification(error.message || ERROR_MESSAGES.GENERIC, 'error');
+        }
+    }
+
+    /**
+     * 處理篩選變更
+     */
+    handleFilterChange(filter) {
+        this.currentFilter = filter;
+
+        // 更新按鈕狀態
+        this.elements.filterButtons.forEach(button => {
+            const isActive = button.dataset.filter === filter;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive);
+        });
+
+        // 重新渲染
+        this.render();
+    }
+
+    /**
+     * 處理切換完成狀態
+     */
+    async handleToggleComplete(todoId) {
+        try {
+            await storageManager.toggleComplete(todoId);
+            this.render();
+        } catch (error) {
+            console.error('切換完成狀態失敗:', error);
+            this.showNotification(error.message || ERROR_MESSAGES.GENERIC, 'error');
+        }
+    }
+
+    /**
+     * 處理開始編輯
+     */
+    handleStartEdit(todoId) {
+        // 如果已在編輯其他項目，先取消
+        if (this.editingTodoId && this.editingTodoId !== todoId) {
+            this.cancelEdit();
+        }
+
+        this.editingTodoId = todoId;
+        this.render();
+
+        // 聚焦到輸入框
+        setTimeout(() => {
+            const editInput = domUtils.query(`.todo-item[data-id="${todoId}"] .todo-edit-input`);
+            if (editInput) {
+                editInput.focus();
+                editInput.select();
+            }
+        }, 0);
+
+        // 繫結編輯事件
+        this.bindEditEvents(todoId);
+    }
+
+    /**
+     * 繫結編輯事件
+     */
+    bindEditEvents(todoId) {
+        const todoElement = domUtils.query(`.todo-item[data-id="${todoId}"]`);
+        if (!todoElement) return;
+
+        const saveBtn = domUtils.query('.todo-edit-save', todoElement);
+        const cancelBtn = domUtils.query('.todo-edit-cancel', todoElement);
+        const input = domUtils.query('.todo-edit-input', todoElement);
+
+        if (saveBtn) {
+            eventUtils.on(saveBtn, 'click', () => this.saveEdit(todoId));
+        }
+
+        if (cancelBtn) {
+            eventUtils.on(cancelBtn, 'click', () => this.cancelEdit());
+        }
+
+        if (input) {
+            eventUtils.on(input, 'keydown', (event) => {
+                if (event.key === 'Enter') {
+                    this.saveEdit(todoId);
+                } else if (event.key === 'Escape') {
+                    this.cancelEdit();
+                }
+            });
+        }
+    }
+
+    /**
+     * 儲存編輯
+     */
+    async saveEdit(todoId) {
+        try {
+            const todoElement = domUtils.query(`.todo-item[data-id="${todoId}"]`);
+            if (!todoElement) return;
+
+            const input = domUtils.query('.todo-edit-input', todoElement);
+            const prioritySelect = domUtils.query('.todo-edit-priority', todoElement);
+
+            const text = input?.value?.trim();
+            const priority = prioritySelect?.value || 'medium';
+
+            if (!text) {
+                this.showNotification(ERROR_MESSAGES.TODO_EMPTY, 'warning');
+                return;
+            }
+
+            await storageManager.update(todoId, { text, priority });
+            this.editingTodoId = null;
+            this.render();
+            this.showNotification(SUCCESS_MESSAGES.TODO_UPDATED, 'success');
+
+        } catch (error) {
+            console.error('儲存編輯失敗:', error);
+            this.showNotification(error.message || ERROR_MESSAGES.GENERIC, 'error');
+        }
+    }
+
+    /**
+     * 取消編輯
+     */
+    cancelEdit() {
+        this.editingTodoId = null;
+        this.render();
+    }
+
+    /**
+     * 處理刪除待辦事項
+     */
+    async handleDeleteTodo(todoId) {
+        try {
+            // 確認刪除
+            if (!confirm('確定要刪除這個待辦事項嗎？')) {
+                return;
+            }
+
+            await storageManager.delete(todoId);
+            this.render();
+            this.showNotification(SUCCESS_MESSAGES.TODO_DELETED, 'success');
+
+        } catch (error) {
+            console.error('刪除待辦事項失敗:', error);
+            this.showNotification(error.message || ERROR_MESSAGES.GENERIC, 'error');
+        }
+    }
+
+    /**
+     * 處理清除已完成
+     */
+    async handleClearCompleted() {
+        try {
+            const completedCount = storageManager.getAll().filter(todo => todo.completed).length;
+
+            if (completedCount === 0) {
+                this.showNotification('沒有已完成的待辦事項', 'info');
+                return;
+            }
+
+            if (!confirm(`確定要清除 ${completedCount} 個已完成的待辦事項嗎？`)) {
+                return;
+            }
+
+            await storageManager.clearCompleted();
+            this.render();
+            this.showNotification(SUCCESS_MESSAGES.ALL_COMPLETED_CLEARED, 'success');
+
+        } catch (error) {
+            console.error('清除已完成待辦事項失敗:', error);
+            this.showNotification(error.message || ERROR_MESSAGES.GENERIC, 'error');
+        }
+    }
+
+    /**
+     * 處理鍵盤快捷鍵
+     */
+    handleKeyboardShortcut(event) {
+        // 如果正在輸入，不處理快捷鍵
+        if (event.target.tagName === 'INPUT' && event.target.type === 'text') {
+            return;
+        }
+
+        const shortcuts = APP_CONFIG.features.keyboardShortcuts.shortcuts;
+        const key = this.getShortcutKey(event);
+
+        if (shortcuts[key]) {
+            event.preventDefault();
+            this.executeShortcut(shortcuts[key]);
+        }
+    }
+
+    /**
+     * 取得快捷鍵字串
+     */
+    getShortcutKey(event) {
+        const parts = [];
+        if (event.ctrlKey || event.metaKey) parts.push('Ctrl');
+        if (event.altKey) parts.push('Alt');
+        if (event.shiftKey) parts.push('Shift');
+
+        if (event.key.length === 1) {
+            parts.push(event.key.toUpperCase());
+        } else {
+            parts.push(event.key);
+        }
+
+        return parts.join('+');
+    }
+
+    /**
+     * 執行快捷鍵動作
+     */
+    executeShortcut(action) {
+        switch (action) {
+            case 'newTodo':
+                this.elements.todoInput?.focus();
+                break;
+            case 'saveTodo':
+                if (this.editingTodoId) {
+                    this.saveEdit(this.editingTodoId);
+                }
+                break;
+            case 'cancelEdit':
+                this.cancelEdit();
+                break;
+            default:
+                console.log('未實現的快捷鍵動作:', action);
+        }
+    }
+
+    /**
+     * 處理窗口大小變更
+     */
+    handleResize() {
+        // 可以在這裡添加響應式邏輯
+        console.log('窗口大小已變更');
+    }
+
+    /**
+     * 顯示通知
+     */
+    showNotification(message, type = 'info', duration = null) {
+        if (!this.elements.notificationContainer) return;
+
+        const notification = domUtils.createElement('div', {
+            className: `notification ${type}`,
+            role: 'alert',
+            'aria-live': 'polite',
+        });
+
+        const content = domUtils.createElement('div', { className: 'notification-content' });
+
+        const icon = this.getNotificationIcon(type);
+        content.appendChild(icon);
+
+        const text = domUtils.createElement('div', { className: 'notification-text' });
+        text.textContent = message;
+        content.appendChild(text);
+
+        // 添加關閉按鈕
+        const closeBtn = domUtils.createElement('button', {
+            className: 'notification-close',
+            'aria-label': '關閉通知',
+        });
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', () => this.removeNotification(notification));
+
+        content.appendChild(closeBtn);
+        notification.appendChild(content);
+
+        // 添加到容器
+        this.elements.notificationContainer.appendChild(notification);
+
+        // 設定自動移除
+        const autoDuration = duration || APP_CONFIG.ui.notifications.duration;
+        setTimeout(() => {
+            this.removeNotification(notification);
+        }, autoDuration);
+
+        // 限制通知數量
+        this.limitNotifications();
+    }
+
+    /**
+     * 取得通知圖示
+     */
+    getNotificationIcon(type) {
+        const iconMap = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️',
+        };
+
+        const icon = domUtils.createElement('span', { className: 'notification-icon' });
+        icon.textContent = iconMap[type] || 'ℹ️';
+        return icon;
+    }
+
+    /**
+     * 移除通知
+     */
+    removeNotification(notification) {
+        if (notification && notification.parentNode) {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
+    }
+
+    /**
+     * 限制通知數量
+     */
+    limitNotifications() {
+        const maxCount = APP_CONFIG.ui.notifications.maxCount;
+        const notifications = this.elements.notificationContainer.children;
+
+        while (notifications.length > maxCount) {
+            this.removeNotification(notifications[0]);
+        }
+    }
+
+    /**
+     * 清空所有通知
+     */
+    clearNotifications() {
+        if (this.elements.notificationContainer) {
+            this.elements.notificationContainer.textContent = '';
+        }
+    }
+
+    /**
+     * 取得當前篩選器
+     */
+    getCurrentFilter() {
+        return this.currentFilter;
+    }
+
+    /**
+     * 設定篩選器
+     */
+    setFilter(filter) {
+        this.handleFilterChange(filter);
+    }
+
+    /**
+     * 聚焦到輸入框
+     */
+    focusInput() {
+        if (this.elements.todoInput) {
+            this.elements.todoInput.focus();
+        }
+    }
+
+    /**
+     * 清空輸入框
+     */
+    clearInput() {
+        if (this.elements.todoInput) {
+            this.elements.todoInput.value = '';
+        }
+    }
+
+    /**
+     * 取得輸入框內容
+     */
+    getInputValue() {
+        return this.elements.todoInput?.value?.trim() || '';
+    }
+
+    /**
+     * 銷毀 UI 管理器
+     */
+    destroy() {
+        this.clearNotifications();
+        this.editingTodoId = null;
+        console.log('UI 管理器已銷毀');
+    }
 }
 
-/**
- * 任務列表組件
- */
-class TaskList {
-  constructor(elements, utils) {
-    this.elements = elements;
-    this.utils = utils;
-  }
+// 建立並匯出單例實例
+const uiManager = new UIManager();
 
-  render(tasks) {
-    if (!this.elements.taskList) return;
-
-    this.elements.taskList.innerHTML = '';
-
-    tasks.forEach(task => {
-      const taskElement = this.createTaskElement(task);
-      this.elements.taskList.appendChild(taskElement);
-    });
-  }
-
-  createTaskElement(task) {
-    const li = document.createElement('li');
-    li.className = 'task-item';
-    li.dataset.taskId = task.id;
-
-    if (task.status === 'completed') {
-      li.classList.add('completed');
-    }
-
-    // 複選框
-    const checkbox = document.createElement('div');
-    checkbox.className = 'task-checkbox';
-    if (task.status === 'completed') {
-      checkbox.classList.add('checked');
-    }
-    checkbox.setAttribute('role', 'checkbox');
-    checkbox.setAttribute('aria-checked', task.status === 'completed');
-    checkbox.setAttribute('tabindex', '0');
-
-    // 內容
-    const content = document.createElement('div');
-    content.className = 'task-content';
-
-    // 標題
-    const title = document.createElement('div');
-    title.className = 'task-title';
-    title.textContent = task.title;
-
-    content.appendChild(title);
-
-    // 描述
-    if (task.description) {
-      const description = document.createElement('div');
-      description.className = 'task-description';
-      description.textContent = this.utils.truncateString(task.description, 100);
-      content.appendChild(description);
-    }
-
-    // 元數據
-    const meta = document.createElement('div');
-    meta.className = 'task-meta';
-
-    // 優先級
-    const priority = document.createElement('span');
-    priority.className = `task-priority ${task.priority}`;
-    priority.textContent = this.getPriorityLabel(task.priority);
-    meta.appendChild(priority);
-
-    // 截止日期
-    if (task.dueDate) {
-      const dueDate = document.createElement('span');
-      dueDate.className = 'task-due-date';
-      dueDate.textContent = this.utils.formatRelativeTime(task.dueDate);
-      meta.appendChild(dueDate);
-    }
-
-    // 標籤
-    if (task.tags && task.tags.length > 0) {
-      const tags = document.createElement('div');
-      tags.className = 'task-tags';
-
-      task.tags.slice(0, 3).forEach(tag => {
-        const tagElement = document.createElement('span');
-        tagElement.className = 'task-tag';
-        tagElement.textContent = tag;
-        tags.appendChild(tagElement);
-      });
-
-      meta.appendChild(tags);
-    }
-
-    content.appendChild(meta);
-
-    // 操作按鈕
-    const actions = document.createElement('div');
-    actions.className = 'task-actions';
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'task-action-btn';
-    editBtn.textContent = '✏️';
-    editBtn.setAttribute('aria-label', '編輯任務');
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'task-action-btn delete';
-    deleteBtn.textContent = '🗑️';
-    deleteBtn.setAttribute('aria-label', '刪除任務');
-
-    actions.appendChild(editBtn);
-    actions.appendChild(deleteBtn);
-
-    li.appendChild(checkbox);
-    li.appendChild(content);
-    li.appendChild(actions);
-
-    return li;
-  }
-
-  getPriorityLabel(priority) {
-    const labels = {
-      high: '🔴 高',
-      medium: '🟡 中',
-      low: '🟢 低'
-    };
-    return labels[priority] || '🟡 中';
-  }
-
-  getAllTaskElements() {
-    return Array.from(this.elements.taskList.querySelectorAll('.task-item'));
-  }
-}
-
-/**
- * 控制組件
- */
-class Controls {
-  constructor(elements, utils) {
-    this.elements = elements;
-    this.utils = utils;
-  }
-}
-
-/**
- * 通知組件
- */
-class Notifications {
-  constructor(container) {
-    this.container = container;
-  }
-
-  show(message, type = 'info', title = null) {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-
-    const icon = document.createElement('div');
-    icon.className = 'notification-icon';
-    icon.textContent = this.getIcon(type);
-
-    const content = document.createElement('div');
-    content.className = 'notification-content';
-
-    if (title) {
-      const titleElement = document.createElement('div');
-      titleElement.className = 'notification-title';
-      titleElement.textContent = title;
-      content.appendChild(titleElement);
-    }
-
-    const messageElement = document.createElement('div');
-    messageElement.className = 'notification-message';
-    messageElement.textContent = message;
-    content.appendChild(messageElement);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'notification-close';
-    closeBtn.setAttribute('aria-label', '關閉通知');
-    closeBtn.textContent = '✕';
-
-    closeBtn.addEventListener('click', () => {
-      notification.style.animation = 'slideOutRight 0.3s ease-out';
-      setTimeout(() => notification.remove(), 300);
-    });
-
-    notification.appendChild(icon);
-    notification.appendChild(content);
-    notification.appendChild(closeBtn);
-
-    this.container.appendChild(notification);
-
-    // 自動移除
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-      }
-    }, 3000);
-  }
-
-  getIcon(type) {
-    const icons = {
-      success: '✅',
-      error: '❌',
-      warning: '⚠️',
-      info: 'ℹ️'
-    };
-    return icons[type] || icons.info;
-  }
-}
+export default uiManager;

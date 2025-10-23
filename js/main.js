@@ -1,294 +1,468 @@
 /**
  * 主應用程式入口文件
- *
- * 這個文件負責初始化整個應用程式，載入所有必要的模組，
- * 並協調各個組件之間的交互。遵循 ES6+ 模組系統。
+ * 負責初始化和啟動整個應用程式
  */
 
-import { App } from './modules/app.js';
-import { Storage } from './modules/storage.js';
-import { UI } from './modules/ui.js';
-import { Utils } from './modules/utils.js';
-import { Settings } from './config/settings.js';
+import app from './modules/app.js';
 
 /**
- * 安全地創建通知元素
+ * 應用程式啟動函數
  */
-function createNotificationElement(message, type = 'info', title = null) {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
+async function startApp() {
+    try {
+        console.log('🎯 Todo List 應用程式啟動中...');
 
-  const icon = document.createElement('div');
-  icon.className = 'notification-icon';
-  icon.textContent = getNotificationIcon(type);
+        // 等待 DOM 準備完成
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
 
-  const content = document.createElement('div');
-  content.className = 'notification-content';
+        // 初始化應用程式
+        await app.initialize();
 
-  if (title) {
-    const titleEl = document.createElement('div');
-    titleEl.className = 'notification-title';
-    titleEl.textContent = title;
-    content.appendChild(titleEl);
-  }
+        // 設定全域錯誤處理
+        setupGlobalErrorHandling();
 
-  const messageEl = document.createElement('div');
-  messageEl.className = 'notification-message';
-  messageEl.textContent = message;
-  content.appendChild(messageEl);
+        // 設定服務工作者（如果支援）
+        setupServiceWorker();
 
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'notification-close';
-  closeBtn.setAttribute('aria-label', '關閉通知');
-  closeBtn.textContent = '✕';
+        // 設定 PWA 功能
+        setupPWA();
 
-  notification.appendChild(icon);
-  notification.appendChild(content);
-  notification.appendChild(closeBtn);
+        console.log('🎉 應用程式啟動成功！');
 
-  // 添加關閉事件監聽器
-  closeBtn.addEventListener('click', () => {
-    notification.style.animation = 'slideOutRight 0.3s ease-out';
-    setTimeout(() => notification.remove(), 300);
-  });
+        // 隱藏載入指示器
+        hideLoadingIndicator();
 
-  return notification;
+        // 顯示歡迎訊息
+        showWelcomeMessage();
+
+    } catch (error) {
+        console.error('💥 應用程式啟動失敗:', error);
+        showStartupError(error);
+    }
 }
 
 /**
- * 顯示通知的輔助函數
+ * 設定全域錯誤處理
  */
-function showNotification(message, type = 'info', title = null) {
-  const notification = createNotificationElement(message, type, title);
+function setupGlobalErrorHandling() {
+    // 設定未捕獲的錯誤處理
+    window.addEventListener('error', (event) => {
+        console.error('全域錯誤:', event.error);
+        // 可以在這裡添加錯誤報告邏輯
+    });
 
-  const container = document.getElementById('notificationContainer');
-  if (container) {
-    container.appendChild(notification);
-
-    // 自動移除通知
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-      }
-    }, 3000);
-  }
+    // 設定未處理的 Promise 拒絕處理
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('未處理的 Promise 拒絕:', event.reason);
+        // 可以在這裡添加錯誤報告邏輯
+    });
 }
 
 /**
- * 根據通知類型獲取圖標
+ * 設定服務工作者
  */
-function getNotificationIcon(type) {
-  const icons = {
-    success: '✅',
-    error: '❌',
-    warning: '⚠️',
-    info: 'ℹ️'
-  };
-  return icons[type] || icons.info;
+async function setupServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ 服務工作者註冊成功:', registration.scope);
+        } catch (error) {
+            console.log('ℹ️ 服務工作者註冊失敗:', error);
+        }
+    } else {
+        console.log('ℹ️ 瀏覽器不支援服務工作者');
+    }
 }
 
 /**
- * 顯示載入指示器
+ * 設定 PWA 功能
  */
-function showLoadingIndicator() {
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.setAttribute('aria-hidden', 'false');
-  }
+function setupPWA() {
+    // 監聽安裝提示
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+
+        // 顯示安裝按鈕或提示
+        showInstallPrompt(deferredPrompt);
+    });
+
+    // 監聽安裝完成
+    window.addEventListener('appinstalled', () => {
+        console.log('✅ PWA 安裝成功');
+        deferredPrompt = null;
+        hideInstallPrompt();
+    });
+}
+
+/**
+ * 顯示安裝提示
+ */
+function showInstallPrompt(prompt) {
+    // 這裡可以實現自定義的安裝提示 UI
+    console.log('📱 可以安裝 PWA 應用程式');
+}
+
+/**
+ * 隱藏安裝提示
+ */
+function hideInstallPrompt() {
+    // 這裡可以實現隱藏安裝提示的邏輯
+    console.log('📱 PWA 安裝提示已隱藏');
 }
 
 /**
  * 隱藏載入指示器
  */
 function hideLoadingIndicator() {
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.setAttribute('aria-hidden', 'true');
-  }
+    const loadingOverlay = document.querySelector('#loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.setAttribute('aria-hidden', 'true');
+    }
 }
 
 /**
- * 顯示錯誤訊息
+ * 顯示歡迎訊息
  */
-function showErrorMessage(message) {
-  hideLoadingIndicator();
-  showNotification(message, 'error', '錯誤');
+function showWelcomeMessage() {
+    // 檢查是否為首次訪問
+    const hasVisited = localStorage.getItem('todo_app_visited');
+
+    if (!hasVisited) {
+        // 可以顯示歡迎教程或提示
+        console.log('👋 歡迎首次使用 Todo List 應用程式！');
+        localStorage.setItem('todo_app_visited', 'true');
+
+        // 顯示簡單的歡迎通知
+        setTimeout(() => {
+            const uiManager = app.modules.ui;
+            if (uiManager) {
+                uiManager.showNotification('歡迎使用 Todo List！點擊輸入框開始新增您的第一個任務。', 'info', 8000);
+            }
+        }, 1000);
+    }
 }
 
 /**
- * 應用程式初始化函數
+ * 顯示啟動錯誤
  */
-async function initializeApp() {
-  try {
-    // 顯示載入指示器
-    showLoadingIndicator();
+function showStartupError(error) {
+    const appElement = document.querySelector('#app');
+    if (!appElement) return;
 
-    // 初始化設定
-    const settings = new Settings();
-    await settings.initialize();
+    // 清空現有內容
+    appElement.textContent = '';
 
-    // 初始化儲存模組
-    const storage = new Storage(settings);
-    await storage.initialize();
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'startup-error';
 
-    // 初始化工具模組
-    const utils = new Utils(settings);
+    const errorContent = document.createElement('div');
+    errorContent.className = 'error-content';
 
-    // 初始化 UI 模組
-    const ui = new UI(settings, utils);
-    await ui.initialize();
+    const title = document.createElement('h1');
+    title.textContent = '🚨 應用程式啟動失敗';
+    errorContent.appendChild(title);
 
-    // 設置儲存模組引用給 UI
-    ui.setStorage(storage);
+    const message = document.createElement('p');
+    message.textContent = '很抱歉，應用程式無法正常啟動。';
+    errorContent.appendChild(message);
 
-    // 初始化主應用程式
-    const app = new App(settings, storage, ui, utils);
-    await app.initialize();
+    const details = document.createElement('details');
 
-    // 隱藏載入指示器
-    hideLoadingIndicator();
+    const summary = document.createElement('summary');
+    summary.textContent = '錯誤詳情';
+    details.appendChild(summary);
 
-    // 註冊服務工作者（如果支援）
-    registerServiceWorker();
+    const pre = document.createElement('pre');
+    pre.textContent = error.message || '未知錯誤';
+    details.appendChild(pre);
 
-    console.log('✅ Todo List 應用程式初始化完成');
+    errorContent.appendChild(details);
 
-  } catch (error) {
-    console.error('❌ 應用程式初始化失敗:', error);
-    showErrorMessage('應用程式初始化失敗，請重新載入頁面。');
-  }
+    const actions = document.createElement('div');
+    actions.className = 'error-actions';
+
+    const reloadBtn = document.createElement('button');
+    reloadBtn.textContent = '重新載入';
+    reloadBtn.addEventListener('click', () => location.reload());
+    actions.appendChild(reloadBtn);
+
+    const homeBtn = document.createElement('button');
+    homeBtn.textContent = '回到首頁';
+    homeBtn.addEventListener('click', () => location.href = '/');
+    actions.appendChild(homeBtn);
+
+    errorContent.appendChild(actions);
+    errorContainer.appendChild(errorContent);
+    appElement.appendChild(errorContainer);
 }
 
 /**
- * 註冊服務工作者（用於 PWA 功能）
+ * 檢查瀏覽器相容性
  */
-async function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('📦 Service Worker 註冊成功:', registration);
-    } catch (error) {
-      console.log('📦 Service Worker 註冊失敗:', error);
+function checkBrowserCompatibility() {
+    const requiredFeatures = [
+        'Promise',
+        'fetch',
+        'localStorage',
+        'querySelector',
+        'addEventListener',
+    ];
+
+    const missingFeatures = requiredFeatures.filter(feature => {
+        switch (feature) {
+            case 'Promise':
+                return typeof Promise === 'undefined';
+            case 'fetch':
+                return typeof fetch === 'undefined';
+            case 'localStorage':
+                return typeof Storage === 'undefined';
+            case 'querySelector':
+                return !document.querySelector;
+            case 'addEventListener':
+                return !document.addEventListener;
+            default:
+                return false;
+        }
+    });
+
+    if (missingFeatures.length > 0) {
+        showCompatibilityError(missingFeatures);
+        return false;
     }
-  }
+
+    return true;
 }
 
 /**
- * 全域錯誤處理
+ * 顯示相容性錯誤
  */
-window.addEventListener('error', (event) => {
-  console.error('全域錯誤:', event.error);
-  showErrorMessage('發生未預期的錯誤，請重新載入頁面。');
-});
+function showCompatibilityError(missingFeatures) {
+    const appElement = document.querySelector('#app');
+    if (!appElement) return;
 
-window.addEventListener('unhandledrejection', (event) => {
-  console.error('未處理的 Promise 拒絕:', event.reason);
-  showErrorMessage('應用程式發生錯誤，請重新載入頁面。');
-});
+    // 清空現有內容
+    appElement.textContent = '';
+
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'compatibility-error';
+
+    const errorContent = document.createElement('div');
+    errorContent.className = 'error-content';
+
+    const title = document.createElement('h1');
+    title.textContent = '🔧 瀏覽器不相容';
+    errorContent.appendChild(title);
+
+    const message = document.createElement('p');
+    message.textContent = '您的瀏覽器不支援以下功能：';
+    errorContent.appendChild(message);
+
+    const featureList = document.createElement('ul');
+    missingFeatures.forEach(feature => {
+        const li = document.createElement('li');
+        li.textContent = feature;
+        featureList.appendChild(li);
+    });
+    errorContent.appendChild(featureList);
+
+    const suggestion = document.createElement('p');
+    suggestion.textContent = '請升級到最新版本的瀏覽器以獲得最佳體驗。';
+    errorContent.appendChild(suggestion);
+
+    const browserSuggestions = document.createElement('div');
+    browserSuggestions.className = 'browser-suggestions';
+
+    const browsers = [
+        { name: 'Chrome', url: 'https://www.google.com/chrome/' },
+        { name: 'Firefox', url: 'https://www.mozilla.org/firefox/' },
+        { name: 'Safari', url: 'https://www.apple.com/safari/' },
+        { name: 'Edge', url: 'https://www.microsoft.com/edge/' },
+    ];
+
+    browsers.forEach(browser => {
+        const link = document.createElement('a');
+        link.href = browser.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = browser.name;
+        browserSuggestions.appendChild(link);
+    });
+
+    errorContent.appendChild(browserSuggestions);
+    errorContainer.appendChild(errorContent);
+    appElement.appendChild(errorContainer);
+}
 
 /**
- * 鍵盤快捷鍵處理
+ * 設定主題
  */
-document.addEventListener('keydown', (event) => {
-  // Ctrl+Enter 或 Cmd+Enter：提交表單
-  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-    const activeElement = document.activeElement;
-    if (activeElement && activeElement.form) {
-      event.preventDefault();
-      activeElement.form.requestSubmit();
-    }
-  }
+function setupTheme() {
+    const savedTheme = localStorage.getItem('todo_theme') || 'auto';
+    const body = document.body;
 
-  // / 鍵：聚焦搜索框
-  if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-    const activeElement = document.activeElement;
-    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-      return; // 如果已經在輸入框中，不觸發搜索
+    // 應用主題
+    if (savedTheme === 'dark' || (savedTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        body.classList.add('theme-dark');
+    } else {
+        body.classList.add('theme-light');
     }
 
-    event.preventDefault();
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-      searchInput.focus();
+    // 監聽系統主題變更
+    if (savedTheme === 'auto') {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            body.classList.toggle('theme-dark', e.matches);
+            body.classList.toggle('theme-light', !e.matches);
+        });
     }
-  }
-
-  // Escape 鍵：清除搜索或關閉模態框
-  if (event.key === 'Escape') {
-    const searchInput = document.getElementById('searchInput');
-    const modal = document.getElementById('confirmModal');
-
-    if (modal && modal.getAttribute('aria-hidden') === 'false') {
-      // 關閉模態框
-      modal.setAttribute('aria-hidden', 'true');
-    } else if (searchInput && searchInput.value && document.activeElement === searchInput) {
-      // 清除搜索
-      searchInput.value = '';
-      searchInput.dispatchEvent(new Event('input'));
-    }
-  }
-});
+}
 
 /**
- * 監聽線上/離線狀態
+ * 設定字體和顯示設定
  */
-window.addEventListener('online', () => {
-  console.log('🌐 網路連線已恢復');
-  showNotification('網路連線已恢復', 'success');
-});
+function setupDisplaySettings() {
+    // 檢查用戶的字體偏好
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (prefersReducedMotion.matches) {
+        document.body.classList.add('reduced-motion');
+    }
 
-window.addEventListener('offline', () => {
-  console.log('📶 網路連線已斷開');
-  showNotification('網路連線已斷開，部分功能可能無法使用', 'warning');
-});
+    // 檢查用戶的顏色偏好
+    const prefersHighContrast = window.matchMedia('(prefers-contrast: high)');
+    if (prefersHighContrast.matches) {
+        document.body.classList.add('high-contrast');
+    }
+}
 
 /**
- * DOM 內容載入完成後初始化應用程式
+ * 初始化應用程式設定
  */
+function initializeAppSettings() {
+    // 檢查是否為首次啟動
+    const isFirstLaunch = !localStorage.getItem('todo_app_version');
+
+    if (isFirstLaunch) {
+        // 設定初始設定
+        localStorage.setItem('todo_app_version', app.state?.version || '1.0.0');
+
+        // 可以在這裡設定其他初始值
+        console.log('🎯 首次啟動，已設定初始設定');
+    } else {
+        // 檢查版本升級
+        const currentVersion = localStorage.getItem('todo_app_version');
+        const appVersion = app.state?.version || '1.0.0';
+
+        if (currentVersion !== appVersion) {
+            console.log(`🔄 應用程式已升級: ${currentVersion} → ${appVersion}`);
+            localStorage.setItem('todo_app_version', appVersion);
+
+            // 可以在這裡執行升級邏輯
+            showUpgradeNotification();
+        }
+    }
+}
+
+/**
+ * 顯示升級通知
+ */
+function showUpgradeNotification() {
+    setTimeout(() => {
+        const uiManager = app.modules?.ui;
+        if (uiManager) {
+            uiManager.showNotification('應用程式已更新到最新版本！', 'success', 5000);
+        }
+    }, 2000);
+}
+
+/**
+ * 設定鍵盤快捷鍵提示
+ */
+function setupKeyboardShortcuts() {
+    // 監聽 Help 按鍵顯示快捷鍵說明
+    document.addEventListener('keydown', (event) => {
+        // Ctrl/Cmd + ?
+        if ((event.ctrlKey || event.metaKey) && event.key === '?') {
+            event.preventDefault();
+            showKeyboardShortcuts();
+        }
+    });
+}
+
+/**
+ * 顯示鍵盤快捷鍵說明
+ */
+function showKeyboardShortcuts() {
+    const shortcuts = [
+        { key: 'Ctrl + N', description: '新增待辦事項' },
+        { key: 'Ctrl + Enter', description: '儲存編輯' },
+        { key: 'Escape', description: '取消編輯' },
+        { key: 'Ctrl + ?', description: '顯示快捷鍵說明' },
+    ];
+
+    const uiManager = app.modules?.ui;
+    if (uiManager) {
+        const message = shortcuts.map(s => `${s.key}: ${s.description}`).join('\n');
+        uiManager.showNotification(message, 'info', 10000);
+    }
+}
+
+// 頁面載入完成後啟動應用程式
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 檢查瀏覽器相容性
+        if (!checkBrowserCompatibility()) {
+            return;
+        }
+
+        // 設定主題和顯示
+        setupTheme();
+        setupDisplaySettings();
+
+        // 初始化應用程式設定
+        initializeAppSettings();
+
+        // 設定鍵盤快捷鍵
+        setupKeyboardShortcuts();
+
+        // 啟動應用程式
+        await startApp();
+    });
 } else {
-  // 如果 DOM 已經載入完成，直接初始化
-  initializeApp();
+    // DOM 已經載入完成
+    (async () => {
+        if (!checkBrowserCompatibility()) {
+            return;
+        }
+
+        setupTheme();
+        setupDisplaySettings();
+        initializeAppSettings();
+        setupKeyboardShortcuts();
+        await startApp();
+    })();
 }
 
-/**
- * 導出主要模組供其他腳本使用
- */
+// 導出主要物件供全域使用
 window.TodoApp = {
-  App,
-  Storage,
-  UI,
-  Utils,
-  Settings
+    app,
+    start: startApp,
 };
 
-/**
- * 開發模式下的除錯工具
- */
+// 開發模式下的除錯工具
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-  window.TodoAppDebug = {
-    // 開發專用的除錯方法
-    logState: () => {
-      console.log('應用程式狀態:', {
-        readyState: document.readyState,
-        online: navigator.onLine,
-        storage: typeof Storage !== 'undefined',
-        serviceWorker: 'serviceWorker' in navigator
-      });
-    },
+    window.TodoDebug = {
+        getState: () => app.getState?.() || {},
+        getInfo: () => app.getInfo?.() || {},
+        healthCheck: () => app.healthCheck?.() || {},
+        restart: () => app.restart?.(),
+        modules: app.modules || {},
+    };
 
-    // 清除所有資料
-    clearAllData: () => {
-      if (confirm('確定要清除所有資料嗎？此操作無法復原。')) {
-        localStorage.clear();
-        sessionStorage.clear();
-        location.reload();
-      }
-    }
-  };
-
-  console.log('🔧 TodoList 開發模式已啟用');
-  console.log('💡 使用 TodoAppDebug.logState() 查看應用程式狀態');
+    console.log('🔧 開發模式已啟用，使用 TodoDebug 存取除錯工具');
 }

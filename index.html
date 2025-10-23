@@ -3,398 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="一個簡潔高效的待辦事項管理應用程式">
-    <meta name="keywords" content="待辦事項, 任務管理, 生產力工具">
-    <meta name="author" content="Joshhu">
+    <meta name="description" content="一個簡潔有效的待辦事項管理應用程式">
+    <meta name="keywords" content="待辦事項, todo, 任務管理, 生產力工具">
+    <meta name="author" content="Josh Hu">
 
-    <title>Todo List - 任務管理工具</title>
+    <title>Todo List - 待辦事項管理</title>
+
+    <!-- 預載入 CSS 文件 -->
+    <link rel="preload" href="css/variables.css" as="style">
+    <link rel="preload" href="css/main.css" as="style">
+    <link rel="preload" href="css/components.css" as="style">
 
     <!-- CSS 文件 -->
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/accessibility.css">
-    <link rel="stylesheet" href="css/status-management.css">
-    <link rel="stylesheet" href="css/responsive-optimization.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/empty-states.css">
-    <link rel="stylesheet" href="css/themes.css">
-    <link rel="stylesheet" href="css/interactions.css">
-    <link rel="stylesheet" href="css/performance.css">
-    <link rel="stylesheet" href="css/accessibility-enhanced.css">
 
-    <!-- Preload 關鍵資源 -->
-    <link rel="preload" href="assets/icons/check.svg" as="image">
-    <link rel="preload" href="assets/icons/edit.svg" as="image">
-    <link rel="preload" href="assets/icons/delete.svg" as="image">
+    <!-- 網站圖示 -->
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
 
-    <!-- PWA 相關 meta 標籤 -->
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Todo List">
+    <!-- 漸進式網路應用程式支援 -->
+    <meta name="theme-color" content="#3498db">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <!-- 跳過連結 - 無障礙導航 -->
-    <a href="#main-content" class="skip-link">跳過到主要內容</a>
+    <!-- 跳到主要內容的無障礙連結 -->
+    <a href="#main-content" class="skip-link">跳到主要內容</a>
 
-    <!-- 載入指示器 -->
-    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
-        <div class="loading-spinner" aria-label="正在載入..."></div>
-    </div>
-
-    <!-- 主要應用程式容器 -->
-    <div class="app-container">
-        <!-- 應用程式標題區域 -->
+    <!-- 應用程式容器 -->
+    <div class="app-container" id="app">
+        <!-- 頁首 -->
         <header class="app-header" role="banner">
-            <div class="container">
-                <div class="header-content">
-                    <h1 class="app-title">
-                        <span class="app-icon">📝</span>
-                        Todo List
-                    </h1>
-                    <div class="header-stats" role="status" aria-live="polite">
-                        <span class="stat-item">
-                            <span class="stat-count" id="totalTasksCount">0</span>
-                            <span class="stat-label">總任務</span>
-                        </span>
-                        <span class="stat-item">
-                            <span class="stat-count" id="completedTasksCount">0</span>
-                            <span class="stat-label">已完成</span>
-                        </span>
-                    </div>
-                </div>
+            <div class="header-content">
+                <h1 class="app-title">
+                    <span class="app-logo">📝</span>
+                    Todo List
+                </h1>
+                <p class="app-subtitle">管理您的待辦事項，提升工作效率</p>
             </div>
         </header>
 
         <!-- 主要內容區域 -->
-        <main class="app-main" role="main" id="main-content">
-            <div class="container">
-                <div class="main-grid">
-
-                    <!-- 側邊欄 - 任務輸入和篩選 -->
-                    <aside class="sidebar" role="complementary">
-                        <!-- 任務輸入表單 -->
-                        <section class="task-input-section">
-                            <h2 class="section-title">新增任務</h2>
-                            <form class="task-form" id="taskForm" novalidate>
-                                <div class="form-group">
-                                    <label for="taskTitle" class="form-label">
-                                        任務標題 <span class="required" aria-label="必填">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="taskTitle"
-                                        class="form-input"
-                                        placeholder="輸入任務標題..."
-                                        required
-                                        maxlength="200"
-                                        aria-describedby="titleError titleHelp"
-                                        autocomplete="off"
-                                    >
-                                    <div class="form-help" id="titleHelp">
-                                        最多 200 個字符
-                                    </div>
-                                    <div class="error-message" id="titleError" role="alert" aria-live="polite"></div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="taskDescription" class="form-label">任務描述</label>
-                                    <textarea
-                                        id="taskDescription"
-                                        class="form-textarea"
-                                        placeholder="輸入任務詳細描述..."
-                                        rows="3"
-                                        maxlength="500"
-                                        aria-describedby="descHelp"
-                                    ></textarea>
-                                    <div class="form-help" id="descHelp">
-                                        最多 500 個字符
-                                    </div>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="taskPriority" class="form-label">優先級</label>
-                                        <select id="taskPriority" class="form-select" aria-describedby="priorityHelp">
-                                            <option value="low">🟢 低</option>
-                                            <option value="medium" selected>🟡 中</option>
-                                            <option value="high">🔴 高</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="taskDueDate" class="form-label">截止日期</label>
-                                        <input
-                                            type="date"
-                                            id="taskDueDate"
-                                            class="form-input"
-                                            aria-describedby="dateHelp"
-                                        >
-                                        <div class="form-help" id="dateHelp">
-                                            選擇任務截止日期
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="taskTags" class="form-label">標籤</label>
-                                    <input
-                                        type="text"
-                                        id="taskTags"
-                                        class="form-input"
-                                        placeholder="輸入標籤，用逗號分隔..."
-                                        aria-describedby="tagsHelp"
-                                        autocomplete="off"
-                                    >
-                                    <div class="form-help" id="tagsHelp">
-                                        例如：工作, 重要, 會議
-                                    </div>
-                                </div>
-
-                                <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary" id="addTaskBtn">
-                                        <span class="btn-icon">➕</span>
-                                        <span class="btn-text">添加任務</span>
-                                        <span class="btn-shortcut">Ctrl+Enter</span>
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" id="clearFormBtn">
-                                        <span class="btn-text">清空</span>
-                                    </button>
-                                </div>
-                            </form>
-                        </section>
-
-                        <!-- 篩選和排序控制 -->
-                        <section class="controls-section">
-                            <h2 class="section-title">篩選與排序</h2>
-
-                            <!-- 搜索框 -->
-                            <div class="search-container">
-                                <label for="searchInput" class="sr-only">搜索任務</label>
-                                <input
-                                    type="search"
-                                    id="searchInput"
-                                    class="search-input"
-                                    placeholder="搜索任務..."
-                                    aria-label="搜索任務"
-                                >
-                                <button
-                                    type="button"
-                                    class="search-clear-btn"
-                                    id="searchClearBtn"
-                                    aria-label="清除搜索"
-                                    tabindex="-1"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-
-                            <!-- 篩選按鈕 -->
-                            <div class="filter-controls" role="tablist" aria-label="任務篩選">
-                                <button
-                                    class="filter-btn active"
-                                    data-filter="all"
-                                    role="tab"
-                                    aria-selected="true"
-                                    aria-controls="taskList"
-                                >
-                                    全部 (<span class="count" data-count="all">0</span>)
-                                </button>
-                                <button
-                                    class="filter-btn"
-                                    data-filter="active"
-                                    role="tab"
-                                    aria-selected="false"
-                                    aria-controls="taskList"
-                                >
-                                    進行中 (<span class="count" data-count="active">0</span>)
-                                </button>
-                                <button
-                                    class="filter-btn"
-                                    data-filter="completed"
-                                    role="tab"
-                                    aria-selected="false"
-                                    aria-controls="taskList"
-                                >
-                                    已完成 (<span class="count" data-count="completed">0</span>)
-                                </button>
-                            </div>
-
-                            <!-- 排序選擇 -->
-                            <div class="sort-controls">
-                                <label for="sortSelect" class="sort-label">排序方式</label>
-                                <select id="sortSelect" class="sort-select" aria-label="排序任務">
-                                    <option value="created-desc">創建時間（新到舊）</option>
-                                    <option value="created-asc">創建時間（舊到新）</option>
-                                    <option value="priority-desc">優先級（高到低）</option>
-                                    <option value="priority-asc">優先級（低到高）</option>
-                                    <option value="due-date">截止日期</option>
-                                    <option value="title">標題（A-Z）</option>
-                                </select>
-                            </div>
-
-                            <!-- 批量操作 -->
-                            <div class="bulk-actions" id="bulkActions" style="display: none;">
-                                <p class="bulk-actions-label">已選擇 <span id="selectedCount">0</span> 項任務</p>
-                                <div class="bulk-actions-buttons">
-                                    <button type="button" class="btn btn-small btn-secondary" id="selectAllBtn">
-                                        全選
-                                    </button>
-                                    <button type="button" class="btn btn-small btn-secondary" id="markCompleteBtn">
-                                        標記完成
-                                    </button>
-                                    <button type="button" class="btn btn-small btn-danger" id="deleteSelectedBtn">
-                                        刪除選中
-                                    </button>
-                                </div>
-                            </div>
-
-                        </section>
-
-                        <!-- 進度統計區域 -->
-                        <section class="progress-section">
-                            <h2 class="section-title">進度統計</h2>
-
-                            <!-- 進度圖表 -->
-                            <div id="progressChart"></div>
-
-                            <!-- 目標進度 -->
-                            <div class="goals-container">
-                                <div id="dailyGoalProgress"></div>
-                                <div id="weeklyGoalProgress"></div>
-                            </div>
-
-                            <!-- 趨勢圖表 -->
-                            <div id="trendChart"></div>
-
-                            <!-- 活動熱力圖 -->
-                            <div id="activityHeatmap"></div>
-                        </section>
-                    </aside>
-
-                    <!-- 主要內容區 - 任務列表 -->
-                    <section class="task-list-section" role="region" aria-label="任務列表">
-                        <div class="task-list-header">
-                            <h2 class="section-title">任務列表</h2>
-                            <div class="view-controls">
-                                <button
-                                    type="button"
-                                    class="view-btn active"
-                                    data-view="list"
-                                    aria-label="列表視圖"
-                                    title="列表視圖"
-                                >
-                                    📋
-                                </button>
-                                <button
-                                    type="button"
-                                    class="view-btn"
-                                    data-view="grid"
-                                    aria-label="網格視圖"
-                                    title="網格視圖"
-                                >
-                                    ⊞
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 任務列表容器 -->
-                        <div class="task-list-container" id="taskListContainer">
-                            <ul class="task-list" id="taskList" role="tabpanel" aria-label="任務項目">
-                                <!-- 任務項目將通過 JavaScript 動態生成 -->
-                            </ul>
-
-                            <!-- 空狀態提示 -->
-                            <div class="empty-state" id="emptyState">
-                                <div class="empty-icon">📝</div>
-                                <h3 class="empty-title">還沒有任務</h3>
-                                <p class="empty-description">
-                                    開始添加你的第一個任務，讓生活更有條理！
-                                </p>
-                                <button type="button" class="btn btn-primary" id="emptyStateAddBtn">
-                                    <span class="btn-icon">➕</span>
-                                    <span class="btn-text">添加第一個任務</span>
-                                </button>
-                            </div>
-
-                            <!-- 搜索無結果狀態 -->
-                            <div class="no-results" id="noResults" style="display: none;">
-                                <div class="no-results-icon">🔍</div>
-                                <h3 class="no-results-title">找不到匹配的任務</h3>
-                                <p class="no-results-description">
-                                    試試調整搜索關鍵字或篩選條件
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- 分頁控制（預留，未來功能） -->
-                        <div class="pagination" id="pagination" style="display: none;">
-                            <button type="button" class="pagination-btn" id="prevPageBtn" disabled>
-                                ‹ 上一頁
-                            </button>
-                            <span class="pagination-info">
-                                第 <span id="currentPage">1</span> 頁，共 <span id="totalPages">1</span> 頁
-                            </span>
-                            <button type="button" class="pagination-btn" id="nextPageBtn" disabled>
-                                下一頁 ›
+        <main class="app-main" id="main-content" role="main">
+            <!-- 新增任務區域 -->
+            <section class="todo-input-section" aria-labelledby="add-task-heading">
+                <h2 id="add-task-heading" class="visually-hidden">新增任務</h2>
+                <div class="todo-input-container">
+                    <form class="todo-form" id="todo-form">
+                        <div class="input-group">
+                            <label for="todo-input" class="visually-hidden">新增待辦事項</label>
+                            <input
+                                type="text"
+                                id="todo-input"
+                                class="todo-input"
+                                placeholder="新增待辦事項..."
+                                aria-label="新增待辦事項"
+                                autocomplete="off"
+                                required
+                            >
+                            <button type="submit" class="todo-submit-btn" aria-label="新增任務">
+                                <span class="btn-icon">+</span>
+                                <span class="btn-text">新增</span>
                             </button>
                         </div>
-                    </section>
+                    </form>
                 </div>
-            </div>
+            </section>
+
+            <!-- 篩選和統計區域 -->
+            <section class="todo-controls" aria-labelledby="filter-heading">
+                <h2 id="filter-heading" class="visually-hidden">篩選和統計</h2>
+                <div class="controls-container">
+                    <div class="filter-buttons" role="tablist" aria-label="任務篩選">
+                        <button
+                            type="button"
+                            class="filter-btn active"
+                            data-filter="all"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="todo-list"
+                        >
+                            全部
+                        </button>
+                        <button
+                            type="button"
+                            class="filter-btn"
+                            data-filter="active"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="todo-list"
+                        >
+                            進行中
+                        </button>
+                        <button
+                            type="button"
+                            class="filter-btn"
+                            data-filter="completed"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="todo-list"
+                        >
+                            已完成
+                        </button>
+                    </div>
+
+                    <div class="todo-stats" aria-live="polite">
+                        <span class="stats-text">
+                            <span id="active-count" class="count">0</span> 個進行中任務
+                        </span>
+                        <button
+                            type="button"
+                            class="clear-completed-btn"
+                            id="clear-completed"
+                            aria-label="清除所有已完成任務"
+                        >
+                            清除已完成
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 待辦事項列表 -->
+            <section class="todo-list-section" aria-labelledby="todo-list-heading">
+                <h2 id="todo-list-heading" class="visually-hidden">待辦事項列表</h2>
+                <div class="todo-list-container">
+                    <ul class="todo-list" id="todo-list" role="tabpanel">
+                        <!-- 待辦事項項目將由 JavaScript 動態生成 -->
+                    </ul>
+
+                    <!-- 空狀態提示 -->
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <h3 class="empty-title">還沒有待辦事項</h3>
+                        <p class="empty-text">開始新增您的第一個任務吧！</p>
+                    </div>
+                </div>
+            </section>
         </main>
 
-        <!-- 頁腳 -->
+        <!-- 頁尾 -->
         <footer class="app-footer" role="contentinfo">
-            <div class="container">
-                <div class="footer-content">
-                    <p class="footer-text">
-                        © 2025 Todo List - 讓生活更有條理
-                    </p>
-                    <div class="footer-shortcuts">
-                        <span class="shortcut-hint">快捷鍵：</span>
-                        <kbd>Ctrl</kbd> + <kbd>Enter</kbd> 添加任務
-                        <span class="shortcut-separator">•</span>
-                        <kbd>/</kbd> 搜索
-                        <span class="shortcut-separator">•</span>
-                        <kbd>Escape</kbd> 清除搜索
-                    </div>
+            <div class="footer-content">
+                <p class="footer-text">
+                    &copy; 2025 Josh Hu. 使用現代網路技術建構。
+                </p>
+                <div class="footer-links">
+                    <a href="#" class="footer-link" aria-label="查看說明文件">說明文件</a>
+                    <a href="#" class="footer-link" aria-label="提供回饋">回饋</a>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- 確認對話框 -->
-    <div class="modal-overlay" id="confirmModal" role="dialog" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalDescription" aria-hidden="true">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title" id="confirmModalTitle">確認操作</h3>
-                <button type="button" class="modal-close" id="confirmModalClose" aria-label="關閉對話框">
-                    ✕
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="modal-description" id="confirmModalDescription">確定要執行此操作嗎？</p>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="confirmModalCancel">取消</button>
-                <button type="button" class="btn btn-danger" id="confirmModalConfirm">確認</button>
-            </div>
+    <!-- 載入中指示器 -->
+    <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+        <div class="loading-spinner" role="status" aria-label="載入中">
+            <span class="spinner"></span>
+            <span class="loading-text">載入中...</span>
         </div>
     </div>
 
     <!-- 通知容器 -->
-    <div class="notification-container" id="notificationContainer" aria-live="polite" aria-atomic="true"></div>
+    <div class="notification-container" id="notification-container" aria-live="polite"></div>
 
     <!-- JavaScript 模組 -->
     <script type="module" src="js/main.js"></script>
 
-    <!-- 漸進式增強 - 為不支援 JavaScript 的環境提供基本功能 -->
+    <!-- 漸進式增強 - 如果 JavaScript 載入失敗的備用方案 -->
     <noscript>
-        <div style="background: #fee; border: 1px solid #fcc; padding: 1rem; margin: 1rem; border-radius: 4px;">
-            <h2>需要啟用 JavaScript</h2>
-            <p>此應用程式需要 JavaScript 才能正常運作。請在瀏覽器設定中啟用 JavaScript。</p>
+        <div class="noscript-warning">
+            <p>此應用程式需要啟用 JavaScript 才能正常運作。</p>
         </div>
     </noscript>
 </body>

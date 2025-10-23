@@ -367,14 +367,6 @@ export const EVENT_TYPES = {
     TODO_FILTERED: 'todo:filtered',
     TODO_SORTED: 'todo:sorted',
 
-    // 倉儲事件
-    REPOSITORY_READY: 'repository:ready',
-    REPOSITORY_ERROR: 'repository:error',
-    COMPLETED_TODOS_CLEARED: 'completed:cleared',
-    ALL_TODOS_CLEARED: 'all:cleared',
-    DATA_EXPORTED: 'data:exported',
-    DATA_IMPORTED: 'data:imported',
-
     // UI 事件
     TOGGLE_THEME: 'ui:toggleTheme',
     TOGGLE_ANIMATIONS: 'ui:toggleAnimations',

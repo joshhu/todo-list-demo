@@ -199,60 +199,27 @@ export const APP_CONFIG = {
 export const DEFAULT_TODOS = [
     {
         id: 'demo-1',
-        title: '歡迎使用 Todo List 應用程式！',
-        description: '這是一個功能強大的任務管理工具，支援完整的任務生命週期管理。',
+        text: '歡迎使用 Todo List 應用程式！',
         completed: false,
         priority: 'medium',
-        category: 'general',
-        tags: ['welcome', 'tutorial'],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     },
     {
         id: 'demo-2',
-        title: '探索任務功能',
-        description: '點擊左側的核取方塊來標記任務為完成，試試看各種篩選和排序功能。',
+        text: '點擊左側的核取方塊來標記任務為完成',
         completed: false,
         priority: 'low',
-        category: 'tutorial',
-        tags: ['tutorial', 'features'],
         createdAt: new Date(Date.now() - 86400000).toISOString(), // 1天前
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
     },
     {
         id: 'demo-3',
-        title: '嘗試編輯功能',
-        description: '點擊任務可以編輯詳細資訊，包括標題、描述、標籤、分類和截止日期。',
+        text: '嘗試編輯或刪除這個任務',
         completed: true,
         priority: 'high',
-        category: 'tutorial',
-        tags: ['tutorial', 'editing'],
         createdAt: new Date(Date.now() - 172800000).toISOString(), // 2天前
         updatedAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(),
-    },
-    {
-        id: 'demo-4',
-        title: '設定截止日期',
-        description: '為重要任務設定截止日期，系統會提醒您即將到期的任務。',
-        completed: false,
-        priority: 'high',
-        category: 'work',
-        tags: ['deadline', 'important'],
-        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3天後
-        createdAt: new Date(Date.now() - 43200000).toISOString(), // 12小時前
-        updatedAt: new Date(Date.now() - 43200000).toISOString(),
-    },
-    {
-        id: 'demo-5',
-        title: '整理個人任務',
-        description: '使用標籤和分類來組織您的任務，讓工作更加井然有序。',
-        completed: false,
-        priority: 'medium',
-        category: 'personal',
-        tags: ['organization', 'personal'],
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2天前
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     },
 ];
 
@@ -366,14 +333,6 @@ export const EVENT_TYPES = {
     TODO_UNCOMPLETED: 'todo:uncompleted',
     TODO_FILTERED: 'todo:filtered',
     TODO_SORTED: 'todo:sorted',
-
-    // 倉儲事件
-    REPOSITORY_READY: 'repository:ready',
-    REPOSITORY_ERROR: 'repository:error',
-    COMPLETED_TODOS_CLEARED: 'completed:cleared',
-    ALL_TODOS_CLEARED: 'all:cleared',
-    DATA_EXPORTED: 'data:exported',
-    DATA_IMPORTED: 'data:imported',
 
     // UI 事件
     TOGGLE_THEME: 'ui:toggleTheme',

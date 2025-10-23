@@ -1,938 +1,713 @@
 /**
- * 儲存模組
- *
- * 負責管理應用程式的資料儲存，包括：
- * - 任務資料的 CRUD 操作
- * - 本地儲存管理
- * - 資料備份和還原
- * - 資料同步（未來功能）
+ * 本地儲存模組
+ * 負責待辦事項資料的儲存和讀取
  */
 
-export class Storage {
-  constructor(settings) {
-    this.settings = settings;
-    this.storageKey = 'todolist-tasks';
-    this.tasks = [];
-    this.listeners = new Map();
-    this.lastModified = null;
-  }
+import { APP_CONFIG, DEFAULT_TODOS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/settings.js';
+import { storageUtils, stringUtils, dateUtils, objectUtils } from './utils.js';
 
-  /**
-   * 初始化儲存模組
-   */
-  async initialize() {
-    try {
-      // 載入任務資料
-      await this.loadTasks();
+/**
+ * 儲存管理器類別
+ */
+class StorageManager {
+    constructor() {
+        this.storageKey = `${APP_CONFIG.storage.prefix}${APP_CONFIG.storage.key}`;
+        this.versionKey = `${APP_CONFIG.storage.prefix}version`;
+        this.lastModifiedKey = `${APP_CONFIG.storage.prefix}last_modified`;
 
-      // 監聽設定變更
-      this.settings.onChange('data.autoSave', (enabled) => {
-        if (enabled) {
-          this.startAutoSave();
-        } else {
-          this.stopAutoSave();
-        }
-      });
-
-      // 啟動自動儲存（如果已啟用）
-      if (this.settings.get('data.autoSave', true)) {
-        this.startAutoSave();
-      }
-
-      console.log('✅ 儲存模組初始化完成');
-    } catch (error) {
-      console.error('❌ 儲存模組初始化失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 載入任務資料
-   */
-  async loadTasks() {
-    try {
-      const savedTasks = localStorage.getItem(this.storageKey);
-      if (savedTasks) {
-        const parsed = JSON.parse(savedTasks);
-        this.tasks = parsed.map(task => this.validateTask(task));
-        this.lastModified = localStorage.getItem(`${this.storageKey}-last-modified`);
-      } else {
-        this.tasks = [];
-        this.lastModified = null;
-      }
-    } catch (error) {
-      console.warn('載入任務失敗，使用空任務列表:', error);
-      this.tasks = [];
-      this.lastModified = null;
-    }
-  }
-
-  /**
-   * 儲存任務資料
-   */
-  async saveTasks() {
-    try {
-      const dataToSave = JSON.stringify(this.tasks);
-      localStorage.setItem(this.storageKey, dataToSave);
-
-      const now = new Date().toISOString();
-      localStorage.setItem(`${this.storageKey}-last-modified`, now);
-      this.lastModified = now;
-
-      this.settings.set('data.lastModified', now);
-    } catch (error) {
-      console.error('儲存任務失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 驗證任務資料
-   * @param {Object} task - 要驗證的任務
-   * @returns {Object} 驗證後的任務
-   */
-  validateTask(task) {
-    const defaultTask = {
-      id: '',
-      title: '',
-      description: '',
-      priority: 'medium',
-      status: 'pending',
-      dueDate: null,
-      tags: [],
-      createdAt: null,
-      updatedAt: null,
-      completedAt: null
-    };
-
-    // 合併預設值
-    const validatedTask = { ...defaultTask, ...task };
-
-    // 確保必要欄位存在
-    if (!validatedTask.id) {
-      validatedTask.id = this.generateTaskId();
+        // 初始化儲存
+        this.initialize();
     }
 
-    if (!validatedTask.createdAt) {
-      validatedTask.createdAt = new Date().toISOString();
-    }
-
-    if (!validatedTask.updatedAt) {
-      validatedTask.updatedAt = validatedTask.createdAt;
-    }
-
-    // 確保標題不為空
-    if (!validatedTask.title || validatedTask.title.trim() === '') {
-      validatedTask.title = '未命名任務';
-    }
-
-    // 清理標題
-    validatedTask.title = validatedTask.title.trim();
-
-    // 確保標籤是陣列
-    if (!Array.isArray(validatedTask.tags)) {
-      validatedTask.tags = [];
-    }
-
-    // 清理標籤
-    validatedTask.tags = validatedTask.tags
-      .filter(tag => tag && typeof tag === 'string')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
-
-    return validatedTask;
-  }
-
-  /**
-   * 生成任務 ID
-   * @returns {string} 任務 ID
-   */
-  generateTaskId() {
-    return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * 獲取所有任務
-   * @returns {Array} 任務陣列
-   */
-  getTasks() {
-    return [...this.tasks];
-  }
-
-  /**
-   * 根據 ID 獲取任務
-   * @param {string} id - 任務 ID
-   * @returns {Object|null} 任務對象或 null
-   */
-  getTask(id) {
-    return this.tasks.find(task => task.id === id) || null;
-  }
-
-  /**
-   * 添加任務
-   * @param {Object} taskData - 任務資料
-   * @returns {Object} 新增的任務
-   */
-  async addTask(taskData) {
-    const newTask = this.validateTask({
-      ...taskData,
-      id: this.generateTaskId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-
-    this.tasks.unshift(newTask); // 添加到開頭
-
-    try {
-      await this.saveTasks();
-      this.notifyListeners('taskAdded', newTask);
-      return newTask;
-    } catch (error) {
-      // 回滾變更
-      this.tasks.shift();
-      throw error;
-    }
-  }
-
-  /**
-   * 更新任務
-   * @param {string} id - 任務 ID
-   * @param {Object} updates - 要更新的資料
-   * @returns {Object|null} 更新後的任務或 null
-   */
-  async updateTask(id, updates) {
-    const taskIndex = this.tasks.findIndex(task => task.id === id);
-    if (taskIndex === -1) {
-      return null;
-    }
-
-    const originalTask = this.tasks[taskIndex];
-    const updatedTask = this.validateTask({
-      ...originalTask,
-      ...updates,
-      updatedAt: new Date().toISOString()
-    });
-
-    this.tasks[taskIndex] = updatedTask;
-
-    try {
-      await this.saveTasks();
-      this.notifyListeners('taskUpdated', updatedTask, originalTask);
-      return updatedTask;
-    } catch (error) {
-      // 回滾變更
-      this.tasks[taskIndex] = originalTask;
-      throw error;
-    }
-  }
-
-  /**
-   * 刪除任務
-   * @param {string} id - 任務 ID
-   * @returns {boolean} 是否成功刪除
-   */
-  async deleteTask(id) {
-    const taskIndex = this.tasks.findIndex(task => task.id === id);
-    if (taskIndex === -1) {
-      return false;
-    }
-
-    const deletedTask = this.tasks[taskIndex];
-    this.tasks.splice(taskIndex, 1);
-
-    try {
-      await this.saveTasks();
-      this.notifyListeners('taskDeleted', deletedTask);
-      return true;
-    } catch (error) {
-      // 回滾變更
-      this.tasks.splice(taskIndex, 0, deletedTask);
-      throw error;
-    }
-  }
-
-  /**
-   * 批量刪除任務
-   * @param {Array} ids - 任務 ID 陣列
-   * @returns {number} 成功刪除的任務數量
-   */
-  async deleteTasks(ids) {
-    const deletedTasks = [];
-    const originalTasks = [...this.tasks];
-
-    // 標記要刪除的任務
-    this.tasks = this.tasks.filter(task => {
-      if (ids.includes(task.id)) {
-        deletedTasks.push(task);
-        return false;
-      }
-      return true;
-    });
-
-    try {
-      await this.saveTasks();
-      deletedTasks.forEach(task => {
-        this.notifyListeners('taskDeleted', task);
-      });
-      return deletedTasks.length;
-    } catch (error) {
-      // 回滾變更
-      this.tasks = originalTasks;
-      throw error;
-    }
-  }
-
-  /**
-   * 切換任務完成狀態
-   * @param {string} id - 任務 ID
-   * @returns {Object|null} 更新後的任務或 null
-   */
-  async toggleTaskStatus(id) {
-    const task = this.getTask(id);
-    if (!task) {
-      return null;
-    }
-
-    const newStatus = task.status === 'completed' ? 'pending' : 'completed';
-    const updates = {
-      status: newStatus,
-      completedAt: newStatus === 'completed' ? new Date().toISOString() : null
-    };
-
-    const updatedTask = await this.updateTask(id, updates);
-
-    // 記錄狀態變更歷史
-    if (updatedTask) {
-      await this.recordStatusChange(id, task.status, newStatus, new Date().toISOString());
-    }
-
-    return updatedTask;
-  }
-
-  /**
-   * 批量更新任務狀態
-   * @param {Array} taskIds - 任務 ID 陣列
-   * @param {string} status - 新狀態 ('pending' 或 'completed')
-   * @returns {Object} 更新結果
-   */
-  async batchUpdateTaskStatus(taskIds, status) {
-    const results = {
-      success: 0,
-      failed: 0,
-      errors: []
-    };
-
-    const originalTasks = this.tasks.map(task => ({ ...task }));
-
-    try {
-      for (const taskId of taskIds) {
+    /**
+     * 初始化儲存系統
+     */
+    initialize() {
         try {
-          const task = this.getTask(taskId);
-          if (task) {
-            const updates = {
-              status,
-              completedAt: status === 'completed' ? new Date().toISOString() : null
+            // 檢查是否需要遷移資料
+            this.checkAndMigrate();
+
+            // 如果沒有資料，載入預設資料
+            if (!this.hasData()) {
+                this.loadDefaultData();
+            }
+
+            console.log('儲存系統初始化完成');
+        } catch (error) {
+            console.error('儲存系統初始化失敗:', error);
+            this.loadDefaultData();
+        }
+    }
+
+    /**
+     * 檢查並遷移資料
+     */
+    checkAndMigrate() {
+        const currentVersion = APP_CONFIG.version;
+        const storedVersion = this.getVersion();
+
+        if (storedVersion !== currentVersion) {
+            console.log(`偵測到版本變更: ${storedVersion} -> ${currentVersion}`);
+
+            // 備份現有資料
+            this.backupData();
+
+            // 執行遷移邏輯
+            this.migrateData(storedVersion, currentVersion);
+
+            // 更新版本號
+            this.setVersion(currentVersion);
+        }
+    }
+
+    /**
+     * 取得儲存的版本號
+     */
+    getVersion() {
+        return storageUtils.get(this.versionKey, '1.0.0');
+    }
+
+    /**
+     * 設定版本號
+     */
+    setVersion(version) {
+        storageUtils.set(this.versionKey, version);
+    }
+
+    /**
+     * 備份資料
+     */
+    backupData() {
+        const data = this.getAllRaw();
+        if (data.length > 0) {
+            const backupKey = `${this.storageKey}_backup_${Date.now()}`;
+            storageUtils.set(backupKey, data);
+            console.log(`資料已備份到: ${backupKey}`);
+        }
+    }
+
+    /**
+     * 遷移資料
+     */
+    migrateData(fromVersion, toVersion) {
+        // 根據版本執行不同的遷移邏輯
+        console.log(`正在遷移資料從 ${fromVersion} 到 ${toVersion}`);
+
+        // 這裡可以加入具體的遷移邏輯
+        // 例如：資料格式變更、新增欄位等
+
+        console.log('資料遷移完成');
+    }
+
+    /**
+     * 檢查是否有資料
+     */
+    hasData() {
+        const data = storageUtils.get(this.storageKey);
+        return data && Array.isArray(data) && data.length > 0;
+    }
+
+    /**
+     * 載入預設資料
+     */
+    loadDefaultData() {
+        const defaultData = DEFAULT_TODOS.map(todo => ({
+            ...todo,
+            id: stringUtils.generateId(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        }));
+
+        this.saveAll(defaultData);
+        console.log('已載入預設資料');
+    }
+
+    /**
+     * 取得所有待辦事項
+     */
+    getAll() {
+        try {
+            const data = storageUtils.get(this.storageKey, []);
+            if (!Array.isArray(data)) {
+                console.warn('儲存資料格式錯誤，重設為空陣列');
+                return [];
+            }
+
+            // 驗證和清理資料
+            return data.filter(todo => this.validateTodo(todo).isValid)
+                      .map(todo => this.normalizeTodo(todo));
+        } catch (error) {
+            console.error('讀取待辦事項失敗:', error);
+            return [];
+        }
+    }
+
+    /**
+     * 取得原始儲存資料
+     */
+    getAllRaw() {
+        return storageUtils.get(this.storageKey, []);
+    }
+
+    /**
+     * 根據 ID 取得待辦事項
+     */
+    getById(id) {
+        if (!id) return null;
+
+        try {
+            const todos = this.getAll();
+            return todos.find(todo => todo.id === id) || null;
+        } catch (error) {
+            console.error(`取得待辦事項 ${id} 失敗:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * 根據條件篩選待辦事項
+     */
+    filter(filters = {}) {
+        try {
+            let todos = this.getAll();
+
+            // 按完成狀態篩選
+            if (filters.completed !== undefined) {
+                todos = todos.filter(todo => todo.completed === filters.completed);
+            }
+
+            // 按優先級篩選
+            if (filters.priority) {
+                todos = todos.filter(todo => todo.priority === filters.priority);
+            }
+
+            // 按日期範圍篩選
+            if (filters.dateFrom) {
+                const fromDate = new Date(filters.dateFrom);
+                todos = todos.filter(todo => new Date(todo.createdAt) >= fromDate);
+            }
+
+            if (filters.dateTo) {
+                const toDate = new Date(filters.dateTo);
+                todos = todos.filter(todo => new Date(todo.createdAt) <= toDate);
+            }
+
+            // 按文字搜尋
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                todos = todos.filter(todo =>
+                    todo.text.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            return todos;
+        } catch (error) {
+            console.error('篩選待辦事項失敗:', error);
+            return [];
+        }
+    }
+
+    /**
+     * 新增待辦事項
+     */
+    add(todoData) {
+        try {
+            // 驗證資料
+            const validation = this.validateTodo(todoData);
+            if (!validation.isValid) {
+                throw new Error(validation.errors.join(', '));
+            }
+
+            // 建立新的待辦事項
+            const newTodo = this.createTodo(todoData);
+
+            // 取得現有資料並新增
+            const todos = this.getAll();
+            todos.push(newTodo);
+
+            // 儲存所有資料
+            if (this.saveAll(todos)) {
+                this.updateLastModified();
+                console.log(`成功新增待辦事項: ${newTodo.id}`);
+                return newTodo;
+            } else {
+                throw new Error(ERROR_MESSAGES.SAVE_FAILED);
+            }
+        } catch (error) {
+            console.error('新增待辦事項失敗:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 更新待辦事項
+     */
+    update(id, updateData) {
+        try {
+            if (!id) {
+                throw new Error(ERROR_MESSAGES.NOT_FOUND);
+            }
+
+            // 驗證更新資料
+            const validation = this.validateTodo(updateData, true);
+            if (!validation.isValid) {
+                throw new Error(validation.errors.join(', '));
+            }
+
+            // 取得現有資料
+            let todos = this.getAll();
+            const index = todos.findIndex(todo => todo.id === id);
+
+            if (index === -1) {
+                throw new Error(ERROR_MESSAGES.NOT_FOUND);
+            }
+
+            // 更新資料
+            const updatedTodo = {
+                ...todos[index],
+                ...updateData,
+                id, // 確保 ID 不被覆蓋
+                updatedAt: new Date().toISOString(),
             };
 
-            const updatedTask = await this.updateTask(taskId, updates);
-            if (updatedTask) {
-              results.success++;
+            todos[index] = updatedTodo;
 
-              // 記錄狀態變更歷史
-              await this.recordStatusChange(taskId, task.status, status, new Date().toISOString());
+            // 儲存所有資料
+            if (this.saveAll(todos)) {
+                this.updateLastModified();
+                console.log(`成功更新待辦事項: ${id}`);
+                return updatedTodo;
             } else {
-              results.failed++;
-              results.errors.push(`任務 ${taskId} 更新失敗`);
+                throw new Error(ERROR_MESSAGES.SAVE_FAILED);
             }
-          } else {
-            results.failed++;
-            results.errors.push(`找不到任務 ${taskId}`);
-          }
         } catch (error) {
-          results.failed++;
-          results.errors.push(`任務 ${taskId} 更新失敗: ${error.message}`);
+            console.error(`更新待辦事項 ${id} 失敗:`, error);
+            throw error;
         }
-      }
-
-      return results;
-    } catch (error) {
-      // 回滾所有變更
-      this.tasks = originalTasks;
-      await this.saveTasks();
-      throw error;
-    }
-  }
-
-  /**
-   * 記錄狀態變更歷史
-   * @param {string} taskId - 任務 ID
-   * @param {string} fromStatus - 原始狀態
-   * @param {string} toStatus - 新狀態
-   * @param {string} changedAt - 變更時間
-   */
-  async recordStatusChange(taskId, fromStatus, toStatus, changedAt) {
-    const historyKey = `${this.storageKey}-status-history`;
-    let history = [];
-
-    try {
-      const saved = localStorage.getItem(historyKey);
-      if (saved) {
-        history = JSON.parse(saved);
-      }
-    } catch (error) {
-      console.warn('載入狀態歷史失敗:', error);
     }
 
-    const changeRecord = {
-      id: this.generateHistoryId(),
-      taskId,
-      fromStatus,
-      toStatus,
-      changedAt,
-      timestamp: new Date(changedAt).getTime()
-    };
+    /**
+     * 刪除待辦事項
+     */
+    delete(id) {
+        try {
+            if (!id) {
+                throw new Error(ERROR_MESSAGES.NOT_FOUND);
+            }
 
-    history.unshift(changeRecord);
+            // 取得現有資料
+            let todos = this.getAll();
+            const index = todos.findIndex(todo => todo.id === id);
 
-    // 限制歷史記錄數量（保留最近 1000 條）
-    if (history.length > 1000) {
-      history = history.slice(0, 1000);
-    }
+            if (index === -1) {
+                throw new Error(ERROR_MESSAGES.NOT_FOUND);
+            }
 
-    try {
-      localStorage.setItem(historyKey, JSON.stringify(history));
-    } catch (error) {
-      console.warn('儲存狀態歷史失敗:', error);
-    }
-  }
+            const deletedTodo = todos[index];
+            todos.splice(index, 1);
 
-  /**
-   * 生成歷史記錄 ID
-   * @returns {string} 歷史記錄 ID
-   */
-  generateHistoryId() {
-    return `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * 獲取狀態變更歷史
-   * @param {string} taskId - 任務 ID（可選）
-   * @param {Object} options - 查詢選項
-   * @returns {Array} 狀態變更歷史
-   */
-  getStatusHistory(taskId = null, options = {}) {
-    const { limit = 50, startDate = null, endDate = null } = options;
-    const historyKey = `${this.storageKey}-status-history`;
-
-    try {
-      const saved = localStorage.getItem(historyKey);
-      let history = saved ? JSON.parse(saved) : [];
-
-      // 篩選特定任務
-      if (taskId) {
-        history = history.filter(record => record.taskId === taskId);
-      }
-
-      // 篩選日期範圍
-      if (startDate) {
-        const start = new Date(startDate).getTime();
-        history = history.filter(record => record.timestamp >= start);
-      }
-
-      if (endDate) {
-        const end = new Date(endDate).getTime();
-        history = history.filter(record => record.timestamp <= end);
-      }
-
-      // 限制數量
-      return history.slice(0, limit);
-    } catch (error) {
-      console.warn('載入狀態歷史失敗:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 獲取狀態統計
-   * @param {Object} options - 統計選項
-   * @returns {Object} 狀態統計資訊
-   */
-  getStatusStatistics(options = {}) {
-    const { period = 'all', startDate = null, endDate = null } = options;
-    const history = this.getStatusHistory(null, { limit: 1000, startDate, endDate });
-
-    const stats = {
-      totalChanges: history.length,
-      completedTasks: 0,
-      uncompletedTasks: 0,
-      changeRate: 0,
-      averageCompletionTime: 0,
-      dailyStats: {},
-      hourlyStats: {}
-    };
-
-    // 計算完成和取消完成的次數
-    history.forEach(change => {
-      if (change.toStatus === 'completed') {
-        stats.completedTasks++;
-      } else if (change.fromStatus === 'completed') {
-        stats.uncompletedTasks++;
-      }
-
-      // 按日期統計
-      const date = new Date(change.changedAt).toISOString().split('T')[0];
-      if (!stats.dailyStats[date]) {
-        stats.dailyStats[date] = { completed: 0, uncompleted: 0 };
-      }
-
-      if (change.toStatus === 'completed') {
-        stats.dailyStats[date].completed++;
-      } else if (change.fromStatus === 'completed') {
-        stats.dailyStats[date].uncompleted++;
-      }
-
-      // 按小時統計
-      const hour = new Date(change.changedAt).getHours();
-      if (!stats.hourlyStats[hour]) {
-        stats.hourlyStats[hour] = { completed: 0, uncompleted: 0 };
-      }
-
-      if (change.toStatus === 'completed') {
-        stats.hourlyStats[hour].completed++;
-      } else if (change.fromStatus === 'completed') {
-        stats.hourlyStats[hour].uncompleted++;
-      }
-    });
-
-    // 計算平均完成時間
-    const completionTimes = this.calculateCompletionTimes(history);
-    if (completionTimes.length > 0) {
-      stats.averageCompletionTime = completionTimes.reduce((sum, time) => sum + time, 0) / completionTimes.length;
-    }
-
-    // 計算變更率
-    if (startDate && endDate) {
-      const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
-      stats.changeRate = days > 0 ? Math.round((stats.totalChanges / days) * 10) / 10 : 0;
-    }
-
-    return stats;
-  }
-
-  /**
-   * 計算任務完成時間
-   * @param {Array} history - 狀態變更歷史
-   * @returns {Array} 完成時間陣列（毫秒）
-   */
-  calculateCompletionTimes(history) {
-    const taskFirstSeen = new Map();
-    const completionTimes = [];
-
-    history.forEach(change => {
-      if (change.fromStatus === 'pending' && change.toStatus === 'completed') {
-        // 記錄完成時間
-        if (taskFirstSeen.has(change.taskId)) {
-          const firstSeen = taskFirstSeen.get(change.taskId);
-          const completionTime = new Date(change.changedAt).getTime() - firstSeen;
-          completionTimes.push(completionTime);
-          taskFirstSeen.delete(change.taskId);
+            // 儲存所有資料
+            if (this.saveAll(todos)) {
+                this.updateLastModified();
+                console.log(`成功刪除待辦事項: ${id}`);
+                return deletedTodo;
+            } else {
+                throw new Error(ERROR_MESSAGES.SAVE_FAILED);
+            }
+        } catch (error) {
+            console.error(`刪除待辦事項 ${id} 失敗:`, error);
+            throw error;
         }
-      } else if (change.fromStatus === null && change.toStatus === 'pending') {
-        // 記錄任務首次創建時間
-        taskFirstSeen.set(change.taskId, new Date(change.changedAt).getTime());
-      }
-    });
-
-    return completionTimes;
-  }
-
-  /**
-   * 獲取近期活躍任務
-   * @param {number} days - 天數
-   * @returns {Array} 活躍任務列表
-   */
-  getActiveTasks(days = 7) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoffTimestamp = cutoffDate.getTime();
-
-    const activeTasks = this.tasks.filter(task => {
-      // 檢查任務是否在近期內有活動
-      const createdAt = new Date(task.createdAt).getTime();
-      const updatedAt = new Date(task.updatedAt).getTime();
-
-      return createdAt >= cutoffTimestamp || updatedAt >= cutoffTimestamp;
-    });
-
-    // 按最近活動時間排序
-    return activeTasks.sort((a, b) => {
-      const aTime = Math.max(new Date(a.createdAt).getTime(), new Date(a.updatedAt).getTime());
-      const bTime = Math.max(new Date(b.createdAt).getTime(), new Date(b.updatedAt).getTime());
-      return bTime - aTime;
-    });
-  }
-
-  /**
-   * 清理狀態歷史記錄
-   * @param {number} daysToKeep - 保留天數
-   */
-  async cleanupStatusHistory(daysToKeep = 90) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-    const cutoffTimestamp = cutoffDate.getTime();
-
-    const historyKey = `${this.storageKey}-status-history`;
-    try {
-      const saved = localStorage.getItem(historyKey);
-      if (saved) {
-        const history = JSON.parse(saved);
-        const filteredHistory = history.filter(record => record.timestamp >= cutoffTimestamp);
-
-        localStorage.setItem(historyKey, JSON.stringify(filteredHistory));
-        console.log(`🧹 清理狀態歷史完成，保留 ${filteredHistory.length} 條記錄`);
-      }
-    } catch (error) {
-      console.warn('清理狀態歷史失敗:', error);
-    }
-  }
-
-  /**
-   * 獲取任務統計資訊
-   * @returns {Object} 統計資訊
-   */
-  getTaskStats() {
-    const total = this.tasks.length;
-    const completed = this.tasks.filter(task => task.status === 'completed').length;
-    const pending = total - completed;
-
-    const priorityStats = {
-      high: this.tasks.filter(task => task.priority === 'high').length,
-      medium: this.tasks.filter(task => task.priority === 'medium').length,
-      low: this.tasks.filter(task => task.priority === 'low').length
-    };
-
-    const overdueTasks = this.tasks.filter(task => {
-      return task.dueDate &&
-             task.status !== 'completed' &&
-             new Date(task.dueDate) < new Date();
-    });
-
-    return {
-      total,
-      completed,
-      pending,
-      completedPercentage: total > 0 ? Math.round((completed / total) * 100) : 0,
-      priority: priorityStats,
-      overdue: overdueTasks.length,
-      lastModified: this.lastModified
-    };
-  }
-
-  /**
-   * 搜尋任務
-   * @param {Object} options - 搜尋選項
-   * @returns {Array} 符合條件的任務
-   */
-  searchTasks(options = {}) {
-    const {
-      query = '',
-      status = null,
-      priority = null,
-      tags = [],
-      dueDate = null,
-      sortBy = 'created-desc',
-      limit = null
-    } = options;
-
-    let filteredTasks = [...this.tasks];
-
-    // 文字搜尋
-    if (query) {
-      const searchQuery = query.toLowerCase();
-      filteredTasks = filteredTasks.filter(task =>
-        task.title.toLowerCase().includes(searchQuery) ||
-        (task.description && task.description.toLowerCase().includes(searchQuery)) ||
-        task.tags.some(tag => tag.toLowerCase().includes(searchQuery))
-      );
     }
 
-    // 狀態篩選
-    if (status) {
-      if (status === 'active') {
-        filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
-      } else if (status === 'completed') {
-        filteredTasks = filteredTasks.filter(task => task.status === 'completed');
-      } else {
-        filteredTasks = filteredTasks.filter(task => task.status === status);
-      }
+    /**
+     * 切換完成狀態
+     */
+    toggleComplete(id) {
+        try {
+            const todo = this.getById(id);
+            if (!todo) {
+                throw new Error(ERROR_MESSAGES.NOT_FOUND);
+            }
+
+            return this.update(id, {
+                completed: !todo.completed,
+                completedAt: !todo.completed ? new Date().toISOString() : null,
+            });
+        } catch (error) {
+            console.error(`切換待辦事項 ${id} 完成狀態失敗:`, error);
+            throw error;
+        }
     }
 
-    // 優先級篩選
-    if (priority) {
-      filteredTasks = filteredTasks.filter(task => task.priority === priority);
+    /**
+     * 清除所有已完成的待辦事項
+     */
+    clearCompleted() {
+        try {
+            let todos = this.getAll();
+            const completedTodos = todos.filter(todo => todo.completed);
+            const activeTodos = todos.filter(todo => !todo.completed);
+
+            if (this.saveAll(activeTodos)) {
+                this.updateLastModified();
+                console.log(`清除了 ${completedTodos.length} 個已完成的待辦事項`);
+                return completedTodos;
+            } else {
+                throw new Error(ERROR_MESSAGES.SAVE_FAILED);
+            }
+        } catch (error) {
+            console.error('清除已完成待辦事項失敗:', error);
+            throw error;
+        }
     }
 
-    // 標籤篩選
-    if (tags.length > 0) {
-      filteredTasks = filteredTasks.filter(task =>
-        tags.some(tag => task.tags.includes(tag))
-      );
+    /**
+     * 批次操作
+     */
+    batch(operations) {
+        try {
+            let todos = this.getAll();
+            const results = [];
+
+            for (const operation of operations) {
+                const { type, data } = operation;
+
+                switch (type) {
+                    case 'add':
+                        const newTodo = this.createTodo(data);
+                        todos.push(newTodo);
+                        results.push({ success: true, data: newTodo });
+                        break;
+
+                    case 'update':
+                        const updateIndex = todos.findIndex(todo => todo.id === data.id);
+                        if (updateIndex !== -1) {
+                            todos[updateIndex] = {
+                                ...todos[updateIndex],
+                                ...data,
+                                updatedAt: new Date().toISOString(),
+                            };
+                            results.push({ success: true, data: todos[updateIndex] });
+                        } else {
+                            results.push({ success: false, error: ERROR_MESSAGES.NOT_FOUND });
+                        }
+                        break;
+
+                    case 'delete':
+                        const deleteIndex = todos.findIndex(todo => todo.id === data.id);
+                        if (deleteIndex !== -1) {
+                            const deletedTodo = todos[deleteIndex];
+                            todos.splice(deleteIndex, 1);
+                            results.push({ success: true, data: deletedTodo });
+                        } else {
+                            results.push({ success: false, error: ERROR_MESSAGES.NOT_FOUND });
+                        }
+                        break;
+
+                    default:
+                        results.push({ success: false, error: '不支援的操作類型' });
+                }
+            }
+
+            // 儲存所有變更
+            if (this.saveAll(todos)) {
+                this.updateLastModified();
+                console.log(`批次操作完成: ${results.filter(r => r.success).length}/${results.length} 成功`);
+                return results;
+            } else {
+                throw new Error(ERROR_MESSAGES.SAVE_FAILED);
+            }
+        } catch (error) {
+            console.error('批次操作失敗:', error);
+            throw error;
+        }
     }
 
-    // 截止日期篩選
-    if (dueDate) {
-      filteredTasks = filteredTasks.filter(task => {
-        if (!task.dueDate) return false;
-        const taskDueDate = new Date(task.dueDate).toDateString();
-        const filterDate = new Date(dueDate).toDateString();
-        return taskDueDate === filterDate;
-      });
+    /**
+     * 儲存所有待辦事項
+     */
+    saveAll(todos) {
+        try {
+            if (!Array.isArray(todos)) {
+                throw new Error('資料必須是陣列');
+            }
+
+            // 驗證所有待辦事項
+            const validTodos = todos.filter(todo => this.validateTodo(todo).isValid);
+
+            if (validTodos.length !== todos.length) {
+                console.warn(`過濾了 ${todos.length - validTodos.length} 個無效的待辦事項`);
+            }
+
+            return storageUtils.set(this.storageKey, validTodos);
+        } catch (error) {
+            console.error('儲存待辦事項失敗:', error);
+            return false;
+        }
     }
 
-    // 排序
-    filteredTasks = this.sortTasks(filteredTasks, sortBy);
+    /**
+     * 建立標準化的待辦事項物件
+     */
+    createTodo(data) {
+        const now = new Date().toISOString();
 
-    // 限制數量
-    if (limit && limit > 0) {
-      filteredTasks = filteredTasks.slice(0, limit);
+        return {
+            id: stringUtils.generateId(),
+            text: stringUtils.normalizeWhitespace(data.text || ''),
+            completed: Boolean(data.completed),
+            priority: data.priority || APP_CONFIG.features.priorities.medium.value,
+            createdAt: now,
+            updatedAt: now,
+            completedAt: data.completed ? now : null,
+            // 擴展欄位
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            dueDate: data.dueDate || null,
+            description: data.description || '',
+        };
     }
 
-    return filteredTasks;
-  }
+    /**
+     * 標準化待辦事項物件
+     */
+    normalizeTodo(todo) {
+        const normalized = { ...todo };
 
-  /**
-   * 排序任務
-   * @param {Array} tasks - 要排序的任務陣列
-   * @param {string} sortBy - 排序方式
-   * @returns {Array} 排序後的任務陣列
-   */
-  sortTasks(tasks, sortBy) {
-    const sorted = [...tasks];
+        // 確保必要欄位存在
+        if (!normalized.id) {
+            normalized.id = stringUtils.generateId();
+        }
 
-    switch (sortBy) {
-      case 'created-asc':
-        return sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        if (typeof normalized.text !== 'string') {
+            normalized.text = String(normalized.text || '');
+        }
 
-      case 'created-desc':
-        return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        if (typeof normalized.completed !== 'boolean') {
+            normalized.completed = Boolean(normalized.completed);
+        }
 
-      case 'updated-desc':
-        return sorted.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        if (!normalized.priority) {
+            normalized.priority = APP_CONFIG.features.priorities.medium.value;
+        }
 
-      case 'updated-asc':
-        return sorted.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
+        if (!normalized.createdAt) {
+            normalized.createdAt = new Date().toISOString();
+        }
 
-      case 'priority-desc':
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return sorted.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
+        if (!normalized.updatedAt) {
+            normalized.updatedAt = normalized.createdAt;
+        }
 
-      case 'priority-asc':
-        const priorityOrderAsc = { high: 3, medium: 2, low: 1 };
-        return sorted.sort((a, b) => priorityOrderAsc[a.priority] - priorityOrderAsc[b.priority]);
+        // 清理文字內容
+        normalized.text = stringUtils.normalizeWhitespace(normalized.text);
 
-      case 'due-date':
-        return sorted.sort((a, b) => {
-          if (!a.dueDate && !b.dueDate) return 0;
-          if (!a.dueDate) return 1;
-          if (!b.dueDate) return -1;
-          return new Date(a.dueDate) - new Date(b.dueDate);
+        return normalized;
+    }
+
+    /**
+     * 驗證待辦事項物件
+     */
+    validateTodo(todo, isUpdate = false) {
+        const errors = [];
+
+        if (!todo || typeof todo !== 'object') {
+            errors.push('待辦事項必須是物件');
+            return { isValid: false, errors };
+        }
+
+        // 檢查 ID
+        if (!isUpdate && !todo.id) {
+            errors.push('待辦事項必須有 ID');
+        }
+
+        // 檢查文字內容
+        if (!isUpdate || todo.text !== undefined) {
+            if (!todo.text || stringUtils.isEmpty(todo.text)) {
+                errors.push(ERROR_MESSAGES.TODO_EMPTY);
+            } else if (todo.text.length > 200) {
+                errors.push(ERROR_MESSAGES.TOO_LONG);
+            }
+        }
+
+        // 檢查優先級
+        if (todo.priority && !APP_CONFIG.features.priorities[todo.priority]) {
+            errors.push(ERROR_MESSAGES.INVALID_PRIORITY);
+        }
+
+        // 檢查日期格式
+        const dateFields = ['createdAt', 'updatedAt', 'completedAt', 'dueDate'];
+        dateFields.forEach(field => {
+            if (todo[field] && isNaN(new Date(todo[field]).getTime())) {
+                errors.push(`${field} 日期格式無效`);
+            }
         });
 
-      case 'title':
-        return sorted.sort((a, b) => a.title.localeCompare(b.title, 'zh-TW'));
-
-      default:
-        return sorted;
+        return {
+            isValid: errors.length === 0,
+            errors,
+        };
     }
-  }
 
-  /**
-   * 獲取所有標籤
-   * @returns {Array} 標籤陣列
-   */
-  getAllTags() {
-    const tagSet = new Set();
-    this.tasks.forEach(task => {
-      task.tags.forEach(tag => tagSet.add(tag));
-    });
-    return Array.from(tagSet).sort();
-  }
+    /**
+     * 更新最後修改時間
+     */
+    updateLastModified() {
+        storageUtils.set(this.lastModifiedKey, new Date().toISOString());
+    }
 
-  /**
-   * 匯出任務資料
-   * @param {Array} taskIds - 要匯出的任務 ID，如果為空則匯出所有任務
-   * @returns {string} JSON 格式的任務資料
-   */
-  exportTasks(taskIds = null) {
-    const tasksToExport = taskIds
-      ? this.tasks.filter(task => taskIds.includes(task.id))
-      : this.tasks;
+    /**
+     * 取得最後修改時間
+     */
+    getLastModified() {
+        return storageUtils.get(this.lastModifiedKey);
+    }
 
-    return JSON.stringify({
-      version: '1.0.0',
-      exportedAt: new Date().toISOString(),
-      tasks: tasksToExport,
-      stats: this.getTaskStats()
-    }, null, 2);
-  }
-
-  /**
-   * 匯入任務資料
-   * @param {string} tasksJson - JSON 格式的任務資料
-   * @param {Object} options - 匯入選項
-   * @returns {Object} 匯入結果
-   */
-  async importTasks(tasksJson, options = {}) {
-    const {
-      overwrite = false,
-      mergeTags = true
-    } = options;
-
-    try {
-      const importedData = JSON.parse(tasksJson);
-      const importedTasks = importedData.tasks || [];
-
-      let importedCount = 0;
-      let skippedCount = 0;
-      let errorCount = 0;
-
-      for (const taskData of importedTasks) {
+    /**
+     * 取得統計資料
+     */
+    getStats() {
         try {
-          const validatedTask = this.validateTask(taskData);
+            const todos = this.getAll();
 
-          if (overwrite) {
-            // 覆蓋模式：如果任務已存在則更新，否則新增
-            const existingTask = this.getTask(validatedTask.id);
-            if (existingTask) {
-              await this.updateTask(validatedTask.id, validatedTask);
+            return {
+                total: todos.length,
+                completed: todos.filter(todo => todo.completed).length,
+                active: todos.filter(todo => !todo.completed).length,
+                byPriority: {
+                    high: todos.filter(todo => todo.priority === 'high').length,
+                    medium: todos.filter(todo => todo.priority === 'medium').length,
+                    low: todos.filter(todo => todo.priority === 'low').length,
+                },
+                lastModified: this.getLastModified(),
+            };
+        } catch (error) {
+            console.error('取得統計資料失敗:', error);
+            return {
+                total: 0,
+                completed: 0,
+                active: 0,
+                byPriority: { high: 0, medium: 0, low: 0 },
+                lastModified: null,
+            };
+        }
+    }
+
+    /**
+     * 匯出資料
+     */
+    export() {
+        try {
+            const data = {
+                version: APP_CONFIG.version,
+                exportedAt: new Date().toISOString(),
+                todos: this.getAll(),
+                stats: this.getStats(),
+            };
+
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `todo-list-${dateUtils.format(new Date(), 'short')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log('資料匯出成功');
+            return true;
+        } catch (error) {
+            console.error('匯出資料失敗:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 匯入資料
+     */
+    import(jsonData) {
+        try {
+            let data;
+
+            if (typeof jsonData === 'string') {
+                data = JSON.parse(jsonData);
             } else {
-              await this.addTask(validatedTask);
+                data = jsonData;
             }
-          } else {
-            // 合併模式：新增所有任務（生成新 ID）
-            const { id, ...taskWithoutId } = validatedTask;
-            await this.addTask(taskWithoutId);
-          }
 
-          importedCount++;
+            if (!data.todos || !Array.isArray(data.todos)) {
+                throw new Error('匯入資料格式錯誤');
+            }
+
+            // 備份現有資料
+            this.backupData();
+
+            // 驗證並清理匯入的資料
+            const validTodos = data.todos
+                .filter(todo => this.validateTodo(todo).isValid)
+                .map(todo => this.normalizeTodo(todo));
+
+            if (validTodos.length === 0) {
+                throw new Error('沒有有效的待辦事項資料');
+            }
+
+            // 儲存匯入的資料
+            if (this.saveAll(validTodos)) {
+                this.updateLastModified();
+                console.log(`成功匯入 ${validTodos.length} 個待辦事項`);
+                return {
+                    success: true,
+                    imported: validTodos.length,
+                    total: data.todos.length,
+                };
+            } else {
+                throw new Error(ERROR_MESSAGES.SAVE_FAILED);
+            }
         } catch (error) {
-          console.error('匯入任務失敗:', error);
-          errorCount++;
+            console.error('匯入資料失敗:', error);
+            return {
+                success: false,
+                error: error.message,
+            };
         }
-      }
-
-      this.notifyListeners('tasksImported', {
-        importedCount,
-        skippedCount,
-        errorCount,
-        total: importedTasks.length
-      });
-
-      return {
-        success: true,
-        importedCount,
-        skippedCount,
-        errorCount,
-        total: importedTasks.length
-      };
-
-    } catch (error) {
-      console.error('匯入任務資料失敗:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * 清空所有任務
-   */
-  async clearAllTasks() {
-    const originalTasks = [...this.tasks];
-    this.tasks = [];
-
-    try {
-      await this.saveTasks();
-      this.notifyListeners('allTasksCleared', originalTasks);
-      return true;
-    } catch (error) {
-      // 回滾變更
-      this.tasks = originalTasks;
-      throw error;
-    }
-  }
-
-  /**
-   * 監聽儲存事件
-   * @param {string} event - 事件名稱
-   * @param {Function} callback - 回調函數
-   * @returns {Function} 取消監聽的函數
-   */
-  on(event, callback) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
     }
 
-    this.listeners.get(event).add(callback);
-
-    return () => {
-      const eventListeners = this.listeners.get(event);
-      if (eventListeners) {
-        eventListeners.delete(callback);
-        if (eventListeners.size === 0) {
-          this.listeners.delete(event);
-        }
-      }
-    };
-  }
-
-  /**
-   * 通知事件監聽器
-   * @param {string} event - 事件名稱
-   * @param {...*} args - 事件參數
-   */
-  notifyListeners(event, ...args) {
-    if (this.listeners.has(event)) {
-      this.listeners.get(event).forEach(callback => {
+    /**
+     * 清空所有資料
+     */
+    clear() {
         try {
-          callback(...args);
+            this.backupData();
+            storageUtils.remove(this.storageKey);
+            storageUtils.remove(this.lastModifiedKey);
+            console.log('所有資料已清空');
+            return true;
         } catch (error) {
-          console.error(`儲存事件監聽器執行失敗 (${event}):`, error);
+            console.error('清空資料失敗:', error);
+            return false;
         }
-      });
     }
-  }
 
-  /**
-   * 開始自動儲存
-   */
-  startAutoSave() {
-    this.stopAutoSave(); // 確保沒有重複的定時器
-
-    const interval = this.settings.get('app.autoSaveInterval', 5000);
-    this.autoSaveTimer = setInterval(() => {
-      this.saveTasks().catch(error => {
-        console.error('自動儲存失敗:', error);
-      });
-    }, interval);
-  }
-
-  /**
-   * 停止自動儲存
-   */
-  stopAutoSave() {
-    if (this.autoSaveTimer) {
-      clearInterval(this.autoSaveTimer);
-      this.autoSaveTimer = null;
+    /**
+     * 重設為預設資料
+     */
+    reset() {
+        try {
+            this.clear();
+            this.loadDefaultData();
+            console.log('資料已重設為預設值');
+            return true;
+        } catch (error) {
+            console.error('重設資料失敗:', error);
+            return false;
+        }
     }
-  }
-
-  /**
-   * 清理資源
-   */
-  destroy() {
-    this.stopAutoSave();
-    this.listeners.clear();
-  }
 }
+
+// 建立並匯出單例實例
+const storageManager = new StorageManager();
+
+export default storageManager;

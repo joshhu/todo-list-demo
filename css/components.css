@@ -1,986 +1,608 @@
 /* 組件樣式文件 */
-/*
- * 這個文件包含所有 UI 組件的樣式，包括表單、按鈕、卡片等。
- * 遵循 BEM 命名規範，保持組件樣式的模組化和可維護性。
- */
+/* 包含所有 UI 組件的特定樣式 */
 
-/* ========== 側邊欄 ========== */
-
-.sidebar {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-6);
-  box-shadow: var(--shadow-sm);
-  height: fit-content;
-  position: sticky;
-  top: calc(var(--spacing-6) + 80px);
+/* 待辦事項輸入表單 */
+.todo-input-container {
+    background: var(--color-bg-secondary);
+    border-radius: var(--border-radius-xl);
+    padding: var(--padding-lg);
+    box-shadow: var(--shadow-lg);
+    border: var(--border-width-1) solid var(--color-border-light);
 }
 
-.section-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-4);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
+.todo-form {
+    width: 100%;
 }
 
-/* ========== 表單組件 ========== */
-
-.task-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
+.input-group {
+    display: flex;
+    gap: var(--spacing-3);
+    align-items: stretch;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
+.todo-input {
+    flex: 1;
+    height: var(--btn-height);
+    padding: var(--form-control-padding);
+    border: var(--form-control-border);
+    border-radius: var(--form-control-radius);
+    font-size: var(--font-size-base);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: var(--transition-colors);
+    outline: none;
 }
 
-.form-label {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
+.todo-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
 }
 
-.required {
-  color: var(--color-error-500);
-  font-weight: var(--font-weight-bold);
+.todo-input::placeholder {
+    color: var(--color-text-muted);
 }
 
-.form-input,
-.form-textarea,
-.form-select {
-  width: 100%;
-  padding: var(--form-input-padding-y) var(--form-input-padding-x);
-  border: 1px solid var(--color-border);
-  border-radius: var(--form-input-border-radius);
-  font-size: var(--font-size-sm);
-  background: var(--color-surface);
-  transition: var(--transition-colors);
+.todo-input:invalid {
+    border-color: var(--color-danger);
 }
 
-.form-input:focus,
-.form-textarea:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+.todo-submit-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    height: var(--btn-height);
+    padding: var(--btn-padding);
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--btn-radius);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    transition: var(--transition-colors);
+    white-space: nowrap;
+    min-width: 100px;
+    justify-content: center;
 }
 
-.form-input:hover,
-.form-textarea:hover,
-.form-select:hover {
-  border-color: var(--color-gray-300);
+.todo-submit-btn:hover {
+    background: var(--color-primary-dark);
+    text-decoration: none;
 }
 
-.form-input::placeholder,
-.form-textarea::placeholder {
-  color: var(--color-gray-400);
+.todo-submit-btn:active {
+    background: var(--color-primary-dark);
+    transform: translateY(1px);
 }
 
-.form-textarea {
-  min-height: 80px;
-  resize: vertical;
+.todo-submit-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-4);
-}
-
-.form-help {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-}
-
-.error-message {
-  font-size: var(--font-size-xs);
-  color: var(--color-error-600);
-  display: none;
-}
-
-.form-group.has-error .form-input,
-.form-group.has-error .form-textarea,
-.form-group.has-error .form-select {
-  border-color: var(--color-error-500);
-}
-
-.form-group.has-error .error-message {
-  display: block;
-}
-
-/* ========== 按鈕組件 ========== */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-2);
-  padding: var(--btn-padding-y) var(--btn-padding-x);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: 1;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-colors), var(--transition-transform), var(--transition-shadow);
-  text-decoration: none;
-  position: relative;
-  overflow: hidden;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.btn:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.btn:disabled {
-  opacity: var(--disabled-opacity);
-  cursor: var(--disabled-cursor);
-  pointer-events: none;
-}
-
-/* 按鈕尺寸 */
-.btn-small {
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--font-size-xs);
-}
-
-.btn-large {
-  padding: var(--spacing-4) var(--spacing-6);
-  font-size: var(--font-size-base);
-}
-
-/* 按鈕類型 */
-.btn-primary {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-600);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary {
-  background: var(--color-gray-100);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-gray-300);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: var(--color-gray-200);
-  border-color: var(--color-gray-400);
-}
-
-.btn-danger {
-  background: var(--color-error-500);
-  color: var(--color-text-inverse);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: var(--color-error-600);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid transparent;
-}
-
-.btn-ghost:hover:not(:disabled) {
-  background: var(--color-gray-100);
-  color: var(--color-text-primary);
+.todo-submit-btn:disabled {
+    background: var(--color-gray-400);
+    cursor: not-allowed;
+    transform: none;
 }
 
 .btn-icon {
-  font-size: 1em;
-  line-height: 1;
+    font-size: var(--font-size-lg);
+    line-height: 1;
 }
 
 .btn-text {
-  font-weight: inherit;
+    font-weight: var(--font-weight-medium);
 }
 
-.btn-shortcut {
-  font-size: var(--font-size-xs);
-  opacity: 0.7;
-  margin-left: var(--spacing-1);
+/* 控制區域 */
+.controls-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-4);
+    flex-wrap: wrap;
 }
 
-/* 按鈕群組 */
-.form-actions {
-  display: flex;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-2);
-}
-
-/* ========== 控制組件 ========== */
-
-/* 搜索容器 */
-.search-container {
-  position: relative;
-  margin-bottom: var(--spacing-4);
-}
-
-.search-input {
-  width: 100%;
-  padding: var(--form-input-padding-y) var(--form-input-padding-x);
-  padding-right: calc(var(--form-input-padding-x) + 2rem);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-sm);
-  background: var(--color-surface);
-  transition: var(--transition-colors);
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.search-clear-btn {
-  position: absolute;
-  right: var(--spacing-3);
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--color-gray-400);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: var(--transition-colors);
-}
-
-.search-clear-btn:hover {
-  background: var(--color-gray-100);
-  color: var(--color-gray-600);
-}
-
-/* 篩選控制 */
-.filter-controls {
-  display: flex;
-  gap: var(--spacing-2);
-  margin-bottom: var(--spacing-4);
-  flex-wrap: wrap;
+.filter-buttons {
+    display: flex;
+    gap: var(--spacing-2);
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-1);
+    border-radius: var(--border-radius-lg);
+    border: var(--border-width-1) solid var(--color-border-light);
 }
 
 .filter-btn {
-  flex: 1;
-  min-width: 0;
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  background: var(--color-gray-100);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-colors);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-1);
+    padding: var(--spacing-3) var(--spacing-4);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-colors);
+    white-space: nowrap;
 }
 
 .filter-btn:hover {
-  background: var(--color-gray-200);
-  color: var(--color-text-primary);
+    color: var(--color-text-primary);
+    background: var(--color-gray-100);
 }
 
 .filter-btn.active {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary-500);
+    background: var(--color-primary);
+    color: var(--color-white);
 }
 
-.filter-btn .count {
-  font-weight: var(--font-weight-semibold);
+.filter-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
 }
 
-/* 排序控制 */
-.sort-controls {
-  margin-bottom: var(--spacing-4);
+.todo-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
 }
 
-.sort-label {
-  display: block;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-2);
+.stats-text {
+    font-weight: var(--font-weight-medium);
 }
 
-.sort-select {
-  width: 100%;
-  padding: var(--spacing-2) var(--spacing-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  background: var(--color-surface);
-  cursor: pointer;
+.count {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
 }
 
-/* 批量操作 */
-.bulk-actions {
-  background: var(--color-primary-50);
-  border: 1px solid var(--color-primary-200);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
+.clear-completed-btn {
+    padding: var(--spacing-2) var(--spacing-3);
+    background: transparent;
+    color: var(--color-danger);
+    border: var(--border-width-1) solid var(--color-danger);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: var(--transition-colors);
 }
 
-.bulk-actions-label {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary-700);
-  margin-bottom: var(--spacing-3);
+.clear-completed-btn:hover {
+    background: var(--color-danger);
+    color: var(--color-white);
+    text-decoration: none;
 }
 
-.bulk-actions-buttons {
-  display: flex;
-  gap: var(--spacing-2);
-  flex-wrap: wrap;
+.clear-completed-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
 }
 
-/* ========== 任務列表區域 ========== */
-
-.task-list-section {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-6);
-  box-shadow: var(--shadow-sm);
+.clear-completed-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.task-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-6);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--color-border);
+/* 待辦事項列表 */
+.todo-list-container {
+    background: var(--color-bg-secondary);
+    border-radius: var(--border-radius-xl);
+    border: var(--border-width-1) solid var(--color-border-light);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
 }
 
-.view-controls {
-  display: flex;
-  gap: var(--spacing-2);
+.todo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
-.view-btn {
-  padding: var(--spacing-2);
-  font-size: var(--font-size-lg);
-  color: var(--color-gray-400);
-  background: var(--color-gray-100);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-colors);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+.todo-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-4);
+    border-bottom: var(--border-width-1) solid var(--color-border-light);
+    transition: var(--transition-colors);
+    gap: var(--spacing-3);
+    min-height: 60px;
 }
 
-.view-btn:hover {
-  background: var(--color-gray-200);
-  color: var(--color-gray-600);
+.todo-item:last-child {
+    border-bottom: none;
 }
 
-.view-btn.active {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary-500);
+.todo-item:hover {
+    background: var(--color-bg-tertiary);
 }
 
-/* 任務列表容器 */
-.task-list-container {
-  min-height: 400px;
-  position: relative;
+.todo-item.completed {
+    opacity: 0.7;
 }
 
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-3);
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
 }
 
-/* ========== 任務項組件 ========== */
-
-.task-item {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--task-item-border-radius);
-  padding: var(--task-item-padding);
-  box-shadow: var(--task-item-shadow);
-  transition: var(--transition-colors), var(--transition-transform), var(--transition-shadow);
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-3);
-  cursor: pointer;
+.todo-checkbox {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: var(--border-width-2) solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-bg-primary);
+    cursor: pointer;
+    transition: var(--transition-colors);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
-.task-item:hover {
-  border-color: var(--color-gray-300);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+.todo-checkbox:hover {
+    border-color: var(--color-primary);
 }
 
-.task-item.completed {
-  opacity: 0.7;
-  background: var(--color-gray-50);
+.todo-checkbox.checked {
+    background: var(--color-success);
+    border-color: var(--color-success);
 }
 
-.task-item.completed .task-title {
-  text-decoration: line-through;
-  color: var(--color-text-secondary);
+.todo-checkbox.checked::after {
+    content: '✓';
+    color: var(--color-white);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
 }
 
-.task-item.selected {
-  border-color: var(--color-primary-500);
-  background: var(--color-primary-50);
+.todo-checkbox:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
 }
 
-.task-checkbox {
-  flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid var(--color-gray-300);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  cursor: pointer;
-  position: relative;
-  transition: var(--transition-colors);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: var(--spacing-1);
+.todo-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    min-width: 0;
 }
 
-.task-checkbox:hover {
-  border-color: var(--color-primary-500);
+.todo-text {
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    word-break: break-word;
+    line-height: var(--line-height-normal);
 }
 
-.task-checkbox.checked {
-  background: var(--color-primary-500);
-  border-color: var(--color-primary-500);
+.todo-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
 }
 
-.task-checkbox.checked::after {
-  content: '✓';
-  color: var(--color-text-inverse);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
+.todo-date {
+    font-weight: var(--font-weight-normal);
 }
 
-.task-content {
-  flex: 1;
-  min-width: 0;
+.todo-priority {
+    font-weight: var(--font-weight-medium);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-gray-200);
+    color: var(--color-gray-700);
 }
 
-.task-title {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-1);
-  word-wrap: break-word;
-  line-height: var(--line-height-tight);
+.todo-priority.high {
+    background: var(--color-danger);
+    color: var(--color-white);
 }
 
-.task-description {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-2);
-  line-height: var(--line-height-normal);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.todo-priority.medium {
+    background: var(--color-warning);
+    color: var(--color-gray-900);
 }
 
-.task-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  flex-wrap: wrap;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+.todo-priority.low {
+    background: var(--color-success);
+    color: var(--color-white);
 }
 
-.task-priority {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-full);
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
+.todo-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    flex-shrink: 0;
 }
 
-.task-priority.high {
-  background: var(--color-error-50);
-  color: var(--color-error-700);
+.todo-action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-colors);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
 }
 
-.task-priority.medium {
-  background: var(--color-warning-50);
-  color: var(--color-warning-700);
+.todo-action-btn:hover {
+    background: var(--color-gray-200);
+    color: var(--color-text-primary);
 }
 
-.task-priority.low {
-  background: var(--color-success-50);
-  color: var(--color-success-700);
+.todo-action-btn.edit:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
 }
 
-.task-due-date {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
+.todo-action-btn.delete:hover {
+    background: var(--color-danger);
+    color: var(--color-white);
 }
 
-.task-tags {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  flex-wrap: wrap;
+.todo-action-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
 }
 
-.task-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--spacing-1) var(--spacing-2);
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+/* 空狀態 */
+.empty-state {
+    text-align: center;
+    padding: var(--padding-2xl);
+    color: var(--color-text-muted);
 }
 
-.task-actions {
-  display: flex;
-  gap: var(--spacing-2);
-  opacity: 0;
-  transition: var(--transition-opacity);
+.empty-icon {
+    font-size: var(--font-size-5xl);
+    margin-bottom: var(--margin-4);
+    opacity: 0.5;
 }
 
-.task-item:hover .task-actions {
-  opacity: 1;
+.empty-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--margin-3);
 }
 
-.task-action-btn {
-  padding: var(--spacing-1);
-  background: var(--color-gray-100);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-sm);
-  color: var(--color-gray-600);
-  cursor: pointer;
-  transition: var(--transition-colors);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  font-size: var(--font-size-sm);
+.empty-text {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
 }
 
-.task-action-btn:hover {
-  background: var(--color-gray-200);
-  color: var(--color-gray-800);
-}
-
-.task-action-btn.delete:hover {
-  background: var(--color-error-50);
-  color: var(--color-error-600);
-  border-color: var(--color-error-200);
-}
-
-/* ========== 空狀態和特殊狀態 ========== */
-
-.empty-state,
-.no-results {
-  text-align: center;
-  padding: var(--spacing-12) var(--spacing-6);
-  color: var(--color-text-secondary);
-}
-
-.empty-icon,
-.no-results-icon {
-  font-size: 4rem;
-  margin-bottom: var(--spacing-4);
-  opacity: 0.5;
-}
-
-.empty-title,
-.no-results-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-2);
-}
-
-.empty-description,
-.no-results-description {
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-6);
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: var(--line-height-relaxed);
-}
-
-/* ========== 模態框 ========== */
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--modal-backdrop);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-index-modal);
-  padding: var(--spacing-4);
-  opacity: 0;
-  visibility: hidden;
-  transition: var(--transition-opacity), var(--transition-visibility);
-}
-
-.modal-overlay[aria-hidden="false"] {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2xl);
-  max-width: var(--modal-max-width);
-  width: var(--modal-width);
-  max-height: 90vh;
-  overflow-y: auto;
-  transform: scale(0.9);
-  transition: var(--transition-transform);
-}
-
-.modal-overlay[aria-hidden="false"] .modal {
-  transform: scale(1);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-6);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.modal-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--color-gray-400);
-  cursor: pointer;
-  font-size: var(--font-size-lg);
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  transition: var(--transition-colors);
-}
-
-.modal-close:hover {
-  background: var(--color-gray-100);
-  color: var(--color-gray-600);
-}
-
-.modal-body {
-  padding: var(--spacing-6);
-}
-
-.modal-description {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  line-height: var(--line-height-relaxed);
-}
-
-.modal-actions {
-  display: flex;
-  gap: var(--spacing-3);
-  justify-content: flex-end;
-  padding: var(--spacing-6);
-  border-top: 1px solid var(--color-border);
-}
-
-/* ========== 通知系統 ========== */
-
-.notification-container {
-  position: fixed;
-  top: var(--spacing-4);
-  right: var(--spacing-4);
-  z-index: var(--z-index-toast);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-  max-width: 400px;
-}
-
+/* 通知樣式 */
 .notification {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-4);
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-3);
-  animation: slideInRight 0.3s ease-out;
+    background: var(--color-white);
+    border: var(--border-width-1) solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-4);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    animation: slideIn var(--duration-normal) var(--ease-out);
 }
 
 .notification.success {
-  border-left: 4px solid var(--color-success-500);
+    border-left: var(--border-width-4) solid var(--color-success);
 }
 
 .notification.error {
-  border-left: 4px solid var(--color-error-500);
+    border-left: var(--border-width-4) solid var(--color-danger);
 }
 
 .notification.warning {
-  border-left: 4px solid var(--color-warning-500);
+    border-left: var(--border-width-4) solid var(--color-warning);
 }
 
 .notification.info {
-  border-left: 4px solid var(--color-info-500);
-}
-
-.notification-icon {
-  flex-shrink: 0;
-  font-size: var(--font-size-lg);
+    border-left: var(--border-width-4) solid var(--color-info);
 }
 
 .notification-content {
-  flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-3);
 }
 
-.notification-title {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-1);
+.notification-icon {
+    font-size: var(--font-size-lg);
+    flex-shrink: 0;
 }
 
 .notification-message {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  line-height: var(--line-height-normal);
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-1);
+    color: var(--color-text-primary);
+}
+
+.notification-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
 }
 
 .notification-close {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--color-gray-400);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  padding: var(--spacing-1);
-  border-radius: var(--radius-sm);
-  transition: var(--transition-colors);
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--spacing-1);
+    font-size: var(--font-size-lg);
+    line-height: 1;
 }
 
 .notification-close:hover {
-  background: var(--color-gray-100);
-  color: var(--color-gray-600);
+    color: var(--color-text-primary);
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }
 
-/* ========== 分頁組件 ========== */
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-4);
-  margin-top: var(--spacing-6);
-  padding-top: var(--spacing-6);
-  border-top: 1px solid var(--color-border);
+/* 編輯模式 */
+.todo-item.editing .todo-content {
+    flex: 1;
 }
 
-.pagination-btn {
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  background: var(--color-gray-100);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-colors);
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: var(--color-gray-200);
-  color: var(--color-text-primary);
-}
-
-.pagination-btn:disabled {
-  opacity: var(--disabled-opacity);
-  cursor: var(--disabled-cursor);
-}
-
-.pagination-info {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-/* ========== 響應式設計 ========== */
-
-/* 小螢幕優化 */
-@media (max-width: 639px) {
-  .sidebar {
-    padding: var(--spacing-4);
-    position: static;
-  }
-
-  .task-list-section {
-    padding: var(--spacing-4);
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-3);
-  }
-
-  .filter-controls {
-    flex-direction: column;
-  }
-
-  .filter-btn {
-    flex: none;
-  }
-
-  .task-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-2);
-  }
-
-  .task-checkbox {
-    align-self: flex-start;
-  }
-
-  .task-actions {
-    opacity: 1;
-    justify-content: flex-end;
-    margin-top: var(--spacing-2);
-  }
-
-  .modal {
+.todo-edit-input {
     width: 100%;
-    max-width: none;
-    margin: var(--spacing-4);
-  }
-
-  .notification-container {
-    left: var(--spacing-4);
-    right: var(--spacing-4);
-    max-width: none;
-  }
-
-  .header-content {
-    flex-direction: column;
-    text-align: center;
-    gap: var(--spacing-3);
-  }
-
-  .header-stats {
-    flex-direction: column;
-    gap: var(--spacing-2);
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .bulk-actions-buttons {
-    flex-direction: column;
-  }
+    height: var(--btn-height);
+    padding: var(--form-control-padding);
+    border: var(--form-control-border);
+    border-radius: var(--form-control-radius);
+    font-size: var(--font-size-base);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: var(--transition-colors);
+    outline: none;
 }
 
-/* 中等螢幕優化 */
-@media (min-width: 768px) {
-  .form-row {
-    gap: var(--spacing-4);
-  }
-
-  .filter-controls {
-    flex-direction: row;
-  }
-
-  .bulk-actions-buttons {
-    flex-wrap: wrap;
-  }
+.todo-edit-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
 }
 
-/* 大螢幕優化 */
-@media (min-width: 1024px) {
-  .task-list-container {
-    min-height: 600px;
-  }
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .input-group {
+        flex-direction: column;
+    }
 
-  .notification-container {
-    max-width: 500px;
-  }
+    .todo-submit-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .controls-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-4);
+    }
+
+    .filter-buttons {
+        justify-content: center;
+    }
+
+    .todo-stats {
+        justify-content: center;
+        flex-direction: column;
+        gap: var(--spacing-2);
+        text-align: center;
+    }
+
+    .todo-item {
+        padding: var(--spacing-3);
+        gap: var(--spacing-2);
+    }
+
+    .todo-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .todo-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-1);
+    }
+
+    .notification {
+        margin: var(--spacing-2);
+    }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+    .notification {
+        background: var(--color-gray-800);
+        border-color: var(--color-gray-600);
+    }
+
+    .todo-checkbox {
+        border-color: var(--color-gray-600);
+    }
+
+    .todo-checkbox:hover {
+        border-color: var(--color-primary);
+    }
+
+    .todo-action-btn:hover {
+        background: var(--color-gray-700);
+    }
+}
+
+/* 高對比模式支援 */
+@media (prefers-contrast: high) {
+    .todo-item {
+        border-bottom-width: var(--border-width-2);
+    }
+
+    .todo-checkbox {
+        border-width: var(--border-width-2);
+    }
+
+    .filter-btn {
+        border: var(--border-width-2) solid transparent;
+    }
+
+    .filter-btn.active {
+        border-color: var(--color-primary);
+    }
+}
+
+/* 減少動畫偏好支援 */
+@media (prefers-reduced-motion: reduce) {
+    .notification {
+        animation: none;
+    }
+
+    @keyframes slideIn,
+    @keyframes slideOut {
+        from,
+        to {
+            transform: none;
+            opacity: 1;
+        }
+    }
 }

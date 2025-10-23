@@ -549,13 +549,15 @@ class App {
      * 銷毀模組
      */
     async destroyModules() {
-        try {
-            if (this.taskManager && typeof this.taskManager.dispose === 'function') {
-                this.taskManager.dispose();
-                console.log('✅ TaskManager 已銷毀');
+        for (const [name, module] of Object.entries(this.modules)) {
+            try {
+                if (typeof module.destroy === 'function') {
+                    await module.destroy();
+                }
+                console.log(`✅ 模組 ${name} 已銷毀`);
+            } catch (error) {
+                console.error(`❌ 銷毀模組 ${name} 失敗:`, error);
             }
-        } catch (error) {
-            console.error('❌ 銷毀 TaskManager 失敗:', error);
         }
     }
 

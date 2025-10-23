@@ -2,7 +2,7 @@
 name: todo-list
 status: completed
 created: 2025-10-23T11:27:59Z
-progress: 100%
+progress: 0%
 prd: .claude/prds/todo-list.md
 github: https://github.com/joshhu/todo-list-demo/issues/1
 ---
