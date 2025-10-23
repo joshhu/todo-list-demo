@@ -1,0 +1,745 @@
+/**
+ * 任務狀態管理樣式
+ *
+ * 包含狀態切換、動畫效果、視覺回饋等樣式
+ */
+
+/* ========== 基礎狀態樣式 ========== */
+
+/* 任務項目狀態樣式 */
+.task-item {
+  transition: all 0.3s ease-in-out;
+  border-left: 4px solid transparent;
+}
+
+.task-item.completed {
+  opacity: 0.8;
+  background-color: #f8fafc;
+}
+
+.task-item.completed .task-content {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+.task-item.pending {
+  border-left-color: #e2e8f0;
+}
+
+.task-item.completed .task-priority {
+  opacity: 0.6;
+}
+
+/* 狀態變更動畫 */
+.task-item.status-changing {
+  animation: status-change-pulse 0.3s ease-in-out;
+}
+
+@keyframes status-change-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* 樂觀更新樣式 */
+.task-item.optimistic-update {
+  opacity: 0.7;
+  border-left-color: #fbbf24;
+}
+
+/* ========== 複選框樣式 ========== */
+
+.task-checkbox {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: #ffffff;
+  transition: all 0.2s ease-in-out;
+  appearance: none;
+  flex-shrink: 0;
+}
+
+.task-checkbox:hover {
+  border-color: #3b82f6;
+  transform: scale(1.05);
+}
+
+.task-checkbox:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.task-checkbox:checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.task-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  animation: checkmark-appear 0.2s ease-in-out;
+}
+
+@keyframes checkmark-appear {
+  0% {
+    opacity: 0;
+    transform: rotate(45deg) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+/* 觸摸友好的複選框 */
+@media (hover: none) {
+  .task-checkbox {
+    width: 32px;
+    height: 32px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ========== 狀態圖標 ========== */
+
+.task-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  margin-right: 12px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.task-status-icon:hover {
+  transform: scale(1.1);
+}
+
+/* ========== 任務選擇樣式 ========== */
+
+.task-select {
+  width: 20px;
+  height: 20px;
+  margin: 0 8px 0 0;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.task-item.selected {
+  background-color: #eff6ff;
+  border-left-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.task-item.selected:hover {
+  background-color: #dbeafe;
+}
+
+/* ========== 批量操作樣式 ========== */
+
+.bulk-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #ffffff, #f8fafc);
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bulk-actions-label {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bulk-actions-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-small:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== 進度條樣式 ========== */
+
+.progress-bar-container {
+  margin: 16px 0;
+}
+
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  background-color: #f1f5f9;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 16px;
+  transition: width 0.5s ease-in-out, background-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+  z-index: 1;
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* ========== 目標進度樣式 ========== */
+
+.goal-progress {
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease-in-out;
+}
+
+.goal-progress:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.goal-title {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.goal-status {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.goal-status.achieved {
+  background-color: #dcfce7;
+  color: #166534;
+  animation: goal-achieved 0.5s ease-in-out;
+}
+
+@keyframes goal-achieved {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.goal-bar {
+  width: 100%;
+  height: 16px;
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.goal-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 8px;
+  transition: width 0.5s ease-in-out;
+  position: relative;
+}
+
+/* ========== 圖表樣式 ========== */
+
+.chart-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* 趨勢圖 */
+.trend-chart {
+  position: relative;
+  height: 200px;
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.trend-chart-bars {
+  position: relative;
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.trend-bar {
+  position: absolute;
+  width: 12%;
+  background: linear-gradient(to top, #3b82f6, #60a5fa);
+  border-radius: 6px 6px 0 0;
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+.trend-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.trend-bar.today {
+  background: linear-gradient(to top, #10b981, #34d399);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.trend-bar-value {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.trend-bar:hover .trend-bar-value {
+  opacity: 1;
+}
+
+.trend-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.trend-label {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+  flex: 1;
+}
+
+/* 熱力圖 */
+.heatmap-container {
+  margin: 16px 0;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.heatmap-cell {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.heatmap-cell.level-0 {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.heatmap-cell.level-1 {
+  background-color: #dbeafe;
+}
+
+.heatmap-cell.level-2 {
+  background-color: #93c5fd;
+}
+
+.heatmap-cell.level-3 {
+  background-color: #3b82f6;
+}
+
+.heatmap-cell.level-4 {
+  background-color: #1e40af;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.legend-colors {
+  display: flex;
+  gap: 2px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-color.level-0 {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.legend-color.level-1 {
+  background-color: #dbeafe;
+}
+
+.legend-color.level-2 {
+  background-color: #93c5fd;
+}
+
+.legend-color.level-3 {
+  background-color: #3b82f6;
+}
+
+.legend-color.level-4 {
+  background-color: #1e40af;
+}
+
+/* ========== 慶祝動畫 ========== */
+
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: confetti-fall 2s ease-out forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* 里程碑慶祝效果 */
+.milestone-celebration {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  text-align: center;
+  animation: milestone-appear 0.5s ease-out;
+}
+
+@keyframes milestone-appear {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ========== 響應式設計 ========== */
+
+@media (max-width: 768px) {
+  .task-checkbox {
+    width: 20px;
+    height: 20px;
+  }
+
+  .task-status-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+  }
+
+  .bulk-actions-buttons {
+    justify-content: center;
+  }
+
+  .btn-small {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .progress-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stat-label {
+    margin-bottom: 0;
+  }
+
+  .heatmap-grid {
+    gap: 2px;
+  }
+
+  .heatmap-cell {
+    width: 12px;
+    height: 12px;
+  }
+
+  .trend-chart {
+    height: 160px;
+    padding: 12px;
+  }
+
+  .trend-chart-bars {
+    height: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .progress-bar {
+    height: 24px;
+  }
+
+  .progress-text {
+    font-size: 12px;
+  }
+
+  .goal-progress {
+    padding: 12px;
+  }
+
+  .chart-title {
+    font-size: 16px;
+  }
+}
+
+/* ========== 無障礙樣式 ========== */
+
+/* 高對比度模式 */
+@media (prefers-contrast: high) {
+  .task-checkbox {
+    border-width: 3px;
+  }
+
+  .progress-bar {
+    border: 2px solid #1e293b;
+  }
+
+  .trend-bar,
+  .heatmap-cell {
+    border: 1px solid #1e293b;
+  }
+}
+
+/* 減少動畫模式 */
+@media (prefers-reduced-motion: reduce) {
+  .task-item,
+  .task-checkbox,
+  .task-status-icon,
+  .progress-fill,
+  .goal-fill,
+  .trend-bar,
+  .heatmap-cell,
+  .confetti-piece {
+    animation: none;
+    transition: none;
+  }
+
+  .task-item.status-changing {
+    animation: none;
+  }
+
+  .progress-fill::after {
+    animation: none;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .task-item.completed {
+    background-color: #1e293b;
+  }
+
+  .task-item.completed .task-content {
+    color: #94a3b8;
+  }
+
+  .progress-bar {
+    background-color: #334155;
+  }
+
+  .progress-text {
+    color: #f1f5f9;
+  }
+
+  .progress-stats,
+  .goal-progress,
+  .trend-chart {
+    background-color: #1e293b;
+    border-color: #334155;
+  }
+
+  .stat-label,
+  .goal-title,
+  .chart-title {
+    color: #f1f5f9;
+  }
+
+  .stat-value {
+    color: #f1f5f9;
+  }
+
+  .heatmap-cell.level-0 {
+    background-color: #334155;
+    border-color: #475569;
+  }
+
+  .legend-item {
+    color: #94a3b8;
+  }
+}

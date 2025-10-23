@@ -129,59 +129,6 @@ export class UI {
 
     // 初始化通知組件
     this.components.notifications = new Notifications(this.elements.notificationContainer);
-
-    // 初始化狀態管理器（如果儲存模組已經可用）
-    if (this.storage) {
-      this.initializeStatusManager();
-      this.initializeProgressTracker();
-    }
-  }
-
-  /**
-   * 設置儲存模組引用
-   */
-  setStorage(storage) {
-    this.storage = storage;
-
-    // 如果組件已經初始化，現在初始化狀態管理器
-    if (this.components.taskInput) {
-      this.initializeStatusManager();
-      this.initializeProgressTracker();
-    }
-  }
-
-  /**
-   * 初始化狀態管理器
-   */
-  initializeStatusManager() {
-    if (!this.storage) return;
-
-    // 動態導入狀態管理器
-    import('../components/status-manager.js').then(({ StatusManager }) => {
-      this.components.statusManager = new StatusManager(this.elements, this.utils, this.storage);
-      this.components.statusManager.initialize().catch(error => {
-        console.error('初始化狀態管理器失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入狀態管理器失敗:', error);
-    });
-  }
-
-  /**
-   * 初始化進度追蹤器
-   */
-  initializeProgressTracker() {
-    if (!this.storage) return;
-
-    // 動態導入進度追蹤器
-    import('../components/progress-tracker.js').then(({ ProgressTracker }) => {
-      this.components.progressTracker = new ProgressTracker(this.elements, this.utils, this.storage);
-      this.components.progressTracker.initialize().catch(error => {
-        console.error('初始化進度追蹤器失敗:', error);
-      });
-    }).catch(error => {
-      console.error('載入進度追蹤器失敗:', error);
-    });
   }
 
   /**

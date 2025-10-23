@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/accessibility.css">
-    <link rel="stylesheet" href="css/status-management.css">
 
     <!-- Preload 關鍵資源 -->
     <link rel="preload" href="assets/icons/check.svg" as="image">
@@ -242,27 +241,6 @@
                                     </button>
                                 </div>
                             </div>
-
-                        </section>
-
-                        <!-- 進度統計區域 -->
-                        <section class="progress-section">
-                            <h2 class="section-title">進度統計</h2>
-
-                            <!-- 進度圖表 -->
-                            <div id="progressChart"></div>
-
-                            <!-- 目標進度 -->
-                            <div class="goals-container">
-                                <div id="dailyGoalProgress"></div>
-                                <div id="weeklyGoalProgress"></div>
-                            </div>
-
-                            <!-- 趨勢圖表 -->
-                            <div id="trendChart"></div>
-
-                            <!-- 活動熱力圖 -->
-                            <div id="activityHeatmap"></div>
                         </section>
                     </aside>
 

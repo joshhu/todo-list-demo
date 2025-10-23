@@ -139,9 +139,6 @@ async function initializeApp() {
     const ui = new UI(settings, utils);
     await ui.initialize();
 
-    // 設置儲存模組引用給 UI
-    ui.setStorage(storage);
-
     // 初始化主應用程式
     const app = new App(settings, storage, ui, utils);
     await app.initialize();

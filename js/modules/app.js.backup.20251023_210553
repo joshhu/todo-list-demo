@@ -74,10 +74,6 @@ export class App {
       this.handleUpdateTasksStatus(data.taskIds, data.status);
     });
 
-    this.ui.on('batchStatusUpdateRequested', (data) => {
-      this.handleBatchStatusUpdate(data.taskIds, data.status);
-    });
-
     this.ui.on('searchChanged', (searchOptions) => {
       this.handleSearch(searchOptions);
     });
@@ -392,51 +388,6 @@ export class App {
     } catch (error) {
       console.error('❌ 批量更新任務狀態失敗:', error);
       this.ui.showNotification('批量更新任務狀態失敗: ' + error.message, 'error');
-    }
-  }
-
-  /**
-   * 處理批量狀態更新（使用新的儲存方法）
-   * @param {Array} taskIds - 任務 ID 陣列
-   * @param {string} status - 新狀態
-   */
-  async handleBatchStatusUpdate(taskIds, status) {
-    try {
-      const results = await this.storage.batchUpdateTaskStatus(taskIds, status);
-
-      if (results.success > 0) {
-        // 更新當前任務列表
-        taskIds.forEach(taskId => {
-          const task = this.storage.getTask(taskId);
-          if (task) {
-            const taskIndex = this.currentTasks.findIndex(t => t.id === taskId);
-            if (taskIndex !== -1) {
-              this.currentTasks[taskIndex] = task;
-            }
-          }
-        });
-
-        // 更新統計資訊
-        this.updateStats();
-
-        // 更新篩選計數
-        this.updateFilterCounts();
-
-        // 重新渲染任務列表
-        this.renderTasks();
-
-        const statusText = status === 'completed' ? '標記為已完成' : '標記為未完成';
-        this.ui.showNotification(`成功${statusText} ${results.success} 項任務`, 'success');
-        console.log(`✅ 批量狀態更新成功，更新了 ${results.success} 項任務`);
-      }
-
-      if (results.failed > 0) {
-        this.ui.showNotification(`${results.failed} 項任務更新失敗`, 'warning');
-      }
-
-    } catch (error) {
-      console.error('❌ 批量狀態更新失敗:', error);
-      this.ui.showNotification('批量狀態更新失敗: ' + error.message, 'error');
     }
   }
 

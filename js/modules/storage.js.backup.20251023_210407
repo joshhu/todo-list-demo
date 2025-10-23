@@ -299,14 +299,7 @@ export class Storage {
       completedAt: newStatus === 'completed' ? new Date().toISOString() : null
     };
 
-    const updatedTask = await this.updateTask(id, updates);
-
-    // 記錄狀態變更歷史
-    if (updatedTask) {
-      await this.recordStatusChange(id, task.status, newStatus, new Date().toISOString());
-    }
-
-    return updatedTask;
+    return this.updateTask(id, updates);
   }
 
   /**
