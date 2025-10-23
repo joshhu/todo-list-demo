@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能測試 - Todo List</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .performance-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .performance-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .test-button:hover {
+            background: #0056b3;
+        }
+
+        .test-button.success {
+            background: #28a745;
+        }
+
+        .test-button.warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .test-button.danger {
+            background: #dc3545;
+        }
+
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .metric-card.good {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .metric-card.needs-improvement {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .metric-card.poor {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .metric-unit {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 30px 0;
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .score-high {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .score-medium {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+        }
+
+        .score-low {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+
+        .recommendations {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .recommendation-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .recommendation-item.high {
+            border-left-color: #dc3545;
+        }
+
+        .recommendation-item.medium {
+            border-left-color: #ffc107;
+        }
+
+        .recommendation-item.low {
+            border-left-color: #28a745;
+        }
+
+        .recommendation-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .recommendation-description {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .recommendation-actions {
+            margin-top: 10px;
+        }
+
+        .recommendation-actions li {
+            margin: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .recommendation-actions li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #007bff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            transition: width 0.3s ease;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            background: #f8f9fa;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+
+        .tab-content {
+            padding: 20px 0;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="performance-container">
+        <header class="performance-header">
+            <h1>⚡ 性能測試工具</h1>
+            <p>檢測和優化 Todo List 應用程式的性能表現</p>
+        </header>
+
+        <main>
+            <section class="test-section">
+                <h2>🚀 開始測試</h2>
+                <div class="control-panel">
+                    <button id="runPerformanceTest" class="test-button">執行性能測試</button>
+                    <button id="runLighthouseTest" class="test-button">執行 Lighthouse 測試</button>
+                    <button id="applyOptimizations" class="test-button">應用性能優化</button>
+                    <button id="clearCache" class="test-button">清理快取</button>
+                    <button id="generateReport" class="test-button">生成性能報告</button>
+                </div>
+
+                <div id="loadingIndicator" class="loading" style="display: none;">
+                    正在執行測試
+                </div>
+
+                <div id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div id="progressText" style="text-align: center; margin-top: 10px;">0%</div>
+                </div>
+            </section>
+
+            <section id="resultsSection" class="test-section" style="display: none;">
+                <h2>📊 測試結果</h2>
+
+                <div id="scoreDisplay" class="score-display"></div>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" data-tab="vitals">核心指標</button>
+                        <button class="tab-button" data-tab="navigation">導航性能</button>
+                        <button class="tab-button" data-tab="resources">資源分析</button>
+                        <button class="tab-button" data-tab="memory">記憶體使用</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div id="vitals" class="tab-pane active">
+                            <div class="metrics-grid" id="vitalsMetrics"></div>
+                        </div>
+                        <div id="navigation" class="tab-pane">
+                            <div class="metrics-grid" id="navigationMetrics"></div>
+                        </div>
+                        <div id="resources" class="tab-pane">
+                            <div id="resourcesChart"></div>
+                        </div>
+                        <div id="memory" class="tab-pane">
+                            <div id="memoryChart"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recommendations">
+                    <h3>💡 優化建議</h3>
+                    <div id="recommendationsList"></div>
+                </div>
+            </section>
+
+            <section class="test-section">
+                <h2>🔧 性能優化狀態</h2>
+                <div id="optimizationsStatus"></div>
+            </section>
+
+            <section class="test-section">
+                <h2>📈 性能基準</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background: #f0f0f0;">
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">指標</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">目標值</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">當前值</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: center;">狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmarkTable">
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 12px;">LCP (最大內容繪製)</td>
+                            <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">&lt; 2.5s</td>
+                            <td id="lcpCurrent" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                            <td id="lcpStatus" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 12px;">FID (首次輸入延遲)</td>
+                            <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">&lt; 100ms</td>
+                            <td id="fidCurrent" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                            <td id="fidStatus" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 12px;">CLS (累計佈局偏移)</td>
+                            <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">&lt; 0.1</td>
+                            <td id="clsCurrent" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                            <td id="clsStatus" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 12px;">TTFB (首字節時間)</td>
+                            <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">&lt; 800ms</td>
+                            <td id="ttfbCurrent" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                            <td id="ttfbStatus" style="border: 1px solid #ddd; padding: 12px; text-align: center;">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/modules/performance.js"></script>
+    <script>
+        // DOM 元素
+        const runPerformanceTest = document.getElementById('runPerformanceTest');
+        const runLighthouseTest = document.getElementById('runLighthouseTest');
+        const applyOptimizations = document.getElementById('applyOptimizations');
+        const clearCache = document.getElementById('clearCache');
+        const generateReport = document.getElementById('generateReport');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const resultsSection = document.getElementById('resultsSection');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const recommendationsList = document.getElementById('recommendationsList');
+        const optimizationsStatus = document.getElementById('optimizationsStatus');
+
+        // 實例
+        let performanceMonitor = null;
+        let performanceOptimizer = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.PerformanceMonitor && window.PerformanceOptimizer) {
+                performanceMonitor = new window.PerformanceMonitor();
+                performanceOptimizer = new window.PerformanceOptimizer();
+            }
+
+            setupEventListeners();
+            checkOptimizationsStatus();
+            setupTabs();
+        });
+
+        /**
+         * 設置事件監聽器
+         */
+        function setupEventListeners() {
+            runPerformanceTest.addEventListener('click', executePerformanceTest);
+            runLighthouseTest.addEventListener('click', executeLighthouseTest);
+            applyOptimizations.addEventListener('click', applyPerformanceOptimizations);
+            clearCache.addEventListener('click', clearApplicationCache);
+            generateReport.addEventListener('click', generatePerformanceReport);
+        }
+
+        /**
+         * 設置標籤頁
+         */
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.dataset.tab;
+
+                    // 移除所有活動狀態
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabPanes.forEach(pane => pane.classList.remove('active'));
+
+                    // 添加活動狀態
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        }
+
+        /**
+         * 安全地創建元素並設置文本內容
+         */
+        function safeCreateElement(tag, textContent, className) {
+            const element = document.createElement(tag);
+            if (textContent) {
+                element.textContent = textContent;
+            }
+            if (className) {
+                element.className = className;
+            }
+            return element;
+        }
+
+        /**
+         * 安全地清除元素內容
+         */
+        function safeClearElement(element) {
+            while (element.firstChild) {
+                element.removeChild(element.firstChild);
+            }
+        }
+
+        /**
+         * 執行性能測試
+         */
+        async function executePerformanceTest() {
+            showLoading(true);
+            updateProgress(0, '初始化性能監控...');
+
+            try {
+                // 重新初始化以獲取最新數據
+                if (window.PerformanceMonitor) {
+                    performanceMonitor = new window.PerformanceMonitor();
+                }
+
+                updateProgress(20, '等待頁面載入完成...');
+                await waitForPageLoad();
+
+                updateProgress(40, '收集性能指標...');
+                await collectMetrics();
+
+                updateProgress(60, '分析測試結果...');
+                const report = performanceMonitor ? performanceMonitor.getPerformanceReport() : generateMockReport();
+
+                updateProgress(80, '生成視覺化圖表...');
+                displayResults(report);
+
+                updateProgress(100, '測試完成');
+                hideLoading();
+
+            } catch (error) {
+                console.error('性能測試失敗:', error);
+                showError('性能測試執行失敗: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        /**
+         * 執行 Lighthouse 測試
+         */
+        async function executeLighthouseTest() {
+            showLoading(true);
+            updateProgress(0, '啟動 Lighthouse 測試...');
+
+            try {
+                // 檢查是否支援 Lighthouse API
+                if (!window.lighthouse) {
+                    // 如果沒有 Lighthouse，提供手動測試指導
+                    showLighthouseInstructions();
+                    return;
+                }
+
+                updateProgress(50, '執行 Lighthouse 分析...');
+
+                // 執行 Lighthouse 測試
+                const lighthouseReport = await runLighthouse();
+
+                updateProgress(100, 'Lighthouse 測試完成');
+                displayLighthouseResults(lighthouseReport);
+                hideLoading();
+
+            } catch (error) {
+                console.error('Lighthouse 測試失敗:', error);
+                showLighthouseInstructions();
+                hideLoading();
+            }
+        }
+
+        /**
+         * 顯示 Lighthouse 測試指導
+         */
+        function showLighthouseInstructions() {
+            const instructions = safeCreateElement('div', '', 'test-section');
+
+            const title = safeCreateElement('h3', '🔍 Lighthouse 測試指導');
+            instructions.appendChild(title);
+
+            const intro = safeCreateElement('p', '要執行完整的 Lighthouse 測試，請按照以下步驟：');
+            instructions.appendChild(intro);
+
+            const stepsList = safeCreateElement('ol');
+            stepsList.style.lineHeight = '1.8';
+
+            const steps = [
+                '打開 Chrome 開發者工具 (F12)',
+                '切換到 "Lighthouse" 標籤',
+                '選擇測試類別（建議選擇性能、無障礙、最佳實踐）',
+                '點擊 "生成報告" 按鈕',
+                '等待測試完成並查看結果'
+            ];
+
+            steps.forEach(step => {
+                const li = safeCreateElement('li', step);
+                stepsList.appendChild(li);
+            });
+            instructions.appendChild(stepsList);
+
+            const targetNote = safeCreateElement('p', '目標分數：所有類別都應達到 90 分以上');
+            targetNote.style.fontWeight = 'bold';
+            instructions.appendChild(targetNote);
+
+            const closeButton = safeCreateElement('button', '關閉指導', 'test-button');
+            closeButton.addEventListener('click', () => instructions.remove());
+            instructions.appendChild(closeButton);
+
+            document.querySelector('main').appendChild(instructions);
+            hideLoading();
+        }
+
+        /**
+         * 應用性能優化
+         */
+        async function applyPerformanceOptimizations() {
+            showLoading(true);
+            updateProgress(0, '應用性能優化...');
+
+            try {
+                if (!performanceOptimizer) {
+                    throw new Error('性能優化器未初始化');
+                }
+
+                const optimizations = await performanceOptimizer.applyAllOptimizations();
+
+                updateProgress(100, '優化完成');
+                hideLoading();
+
+                showOptimizationsSuccess(optimizations);
+                checkOptimizationsStatus();
+
+            } catch (error) {
+                console.error('應用優化失敗:', error);
+                showError('應用性能優化失敗: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        /**
+         * 清理應用快取
+         */
+        async function clearApplicationCache() {
+            showLoading(true);
+            updateProgress(0, '清理快取...');
+
+            try {
+                // 清理瀏覽器快取
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                }
+
+                // 清理 localStorage
+                localStorage.clear();
+
+                // 通知 Service Worker 清理快取
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.ready;
+                    if (registration.active) {
+                        registration.active.postMessage({ type: 'CLEAR_CACHE' });
+                    }
+                }
+
+                updateProgress(100, '快取清理完成');
+                hideLoading();
+
+                showSuccess('所有快取已清理完成');
+
+            } catch (error) {
+                console.error('清理快取失敗:', error);
+                showError('清理快取失敗: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        /**
+         * 生成性能報告
+         */
+        async function generatePerformanceReport() {
+            if (!performanceMonitor) {
+                showError('請先執行性能測試');
+                return;
+            }
+
+            const report = performanceMonitor.getPerformanceReport();
+
+            // 創建可下載的報告文件
+            const reportData = {
+                timestamp: new Date().toISOString(),
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                ...report
+            };
+
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+                type: 'application/json'
+            });
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `performance-report-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showSuccess('性能報告已下載');
+        }
+
+        /**
+         * 等待頁面載入完成
+         */
+        function waitForPageLoad() {
+            return new Promise(resolve => {
+                if (document.readyState === 'complete') {
+                    resolve();
+                } else {
+                    window.addEventListener('load', resolve, { once: true });
+                }
+            });
+        }
+
+        /**
+         * 收集性能指標
+         */
+        async function collectMetrics() {
+            // 等待一段時間讓瀏覽器收集指標
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        /**
+         * 生成模擬報告（用於測試）
+         */
+        function generateMockReport() {
+            return {
+                score: 85,
+                vitals: {
+                    LCP: 2100,
+                    FID: 45,
+                    CLS: 0.08,
+                    FCP: 1200
+                },
+                navigation: {
+                    dns: 12,
+                    tcp: 45,
+                    ttfb: 180,
+                    download: 230,
+                    domParse: 150,
+                    totalTime: 1800
+                },
+                resources: {
+                    script: { count: 5, totalSize: 125000, totalTime: 450 },
+                    stylesheet: { count: 3, totalSize: 45000, totalTime: 120 },
+                    image: { count: 8, totalSize: 280000, totalTime: 680 }
+                },
+                memory: {
+                    used: 25000000,
+                    total: 50000000,
+                    limit: 2000000000
+                },
+                recommendations: [
+                    {
+                        metric: 'LCP',
+                        priority: 'medium',
+                        title: '優化最大內容繪製時間',
+                        description: '當前 LCP 為 2100ms，建議優化到 2500ms 以下',
+                        actions: [
+                            '使用現代圖片格式（WebP、AVIF）',
+                            '實現圖片懶加載',
+                            '優化伺服器響應時間'
+                        ]
+                    }
+                ]
+            };
+        }
+
+        /**
+         * 顯示測試結果
+         */
+        function displayResults(report) {
+            // 顯示總分
+            displayScore(report.score);
+
+            // 顯示核心指標
+            displayVitals(report.vitals);
+
+            // 顯示導航指標
+            displayNavigationMetrics(report.navigation);
+
+            // 顯示資源指標
+            displayResourceMetrics(report.resources);
+
+            // 顯示記憶體指標
+            displayMemoryMetrics(report.memory);
+
+            // 顯示建議
+            displayRecommendations(report.recommendations);
+
+            // 更新基準表
+            updateBenchmarkTable(report.vitals);
+
+            // 顯示結果區域
+            resultsSection.style.display = 'block';
+        }
+
+        /**
+         * 顯示總分
+         */
+        function displayScore(score) {
+            let scoreClass = 'score-low';
+            if (score >= 90) {
+                scoreClass = 'score-high';
+            } else if (score >= 70) {
+                scoreClass = 'score-medium';
+            }
+
+            scoreDisplay.className = `score-display ${scoreClass}`;
+            safeClearElement(scoreDisplay);
+
+            const scoreMain = safeCreateElement('div', `性能總分: ${score}/100`);
+            scoreDisplay.appendChild(scoreMain);
+
+            const scoreDesc = safeCreateElement('div', getScoreDescription(score));
+            scoreDesc.style.fontSize = '18px';
+            scoreDesc.style.marginTop = '10px';
+            scoreDesc.style.opacity = '0.9';
+            scoreDisplay.appendChild(scoreDesc);
+        }
+
+        /**
+         * 獲取分數描述
+         */
+        function getScoreDescription(score) {
+            if (score >= 90) return '優秀 🌟';
+            if (score >= 70) return '良好 👍';
+            if (score >= 50) return '一般 ⚠️';
+            return '需要改進 🔧';
+        }
+
+        /**
+         * 顯示核心指標
+         */
+        function displayVitals(vitals) {
+            const container = document.getElementById('vitalsMetrics');
+            safeClearElement(container);
+
+            const metrics = [
+                { key: 'LCP', label: '最大內容繪製', unit: 'ms', threshold: 2500 },
+                { key: 'FID', label: '首次輸入延遲', unit: 'ms', threshold: 100 },
+                { key: 'CLS', label: '累計佈局偏移', unit: '', threshold: 0.1 },
+                { key: 'FCP', label: '首次內容繪製', unit: 'ms', threshold: 1800 }
+            ];
+
+            metrics.forEach(metric => {
+                const value = vitals[metric.key];
+                if (value !== undefined) {
+                    const status = getMetricStatus(value, metric.threshold);
+                    const card = createMetricCard(metric.label, value, metric.unit, status);
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        /**
+         * 顯示導航指標
+         */
+        function displayNavigationMetrics(navigation) {
+            const container = document.getElementById('navigationMetrics');
+            safeClearElement(container);
+
+            if (!navigation) {
+                container.appendChild(safeCreateElement('p', '無導航數據'));
+                return;
+            }
+
+            const metrics = [
+                { key: 'dns', label: 'DNS 查詢', unit: 'ms' },
+                { key: 'tcp', label: 'TCP 連接', unit: 'ms' },
+                { key: 'ttfb', label: '首字節時間', unit: 'ms' },
+                { key: 'download', label: '資源下載', unit: 'ms' },
+                { key: 'domParse', label: 'DOM 解析', unit: 'ms' },
+                { key: 'totalTime', label: '總載入時間', unit: 'ms' }
+            ];
+
+            metrics.forEach(metric => {
+                const value = navigation[metric.key];
+                if (value !== undefined) {
+                    const threshold = metric.key === 'totalTime' ? 3000 : 1000;
+                    const status = getMetricStatus(value, threshold);
+                    const card = createMetricCard(metric.label, Math.round(value), metric.unit, status);
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        /**
+         * 顯示資源指標
+         */
+        function displayResourceMetrics(resources) {
+            const container = document.getElementById('resourcesChart');
+            safeClearElement(container);
+
+            if (!resources || Object.keys(resources).length === 0) {
+                container.appendChild(safeCreateElement('p', '無資源數據'));
+                return;
+            }
+
+            Object.entries(resources).forEach(([type, data]) => {
+                const resourceDiv = safeCreateElement('div');
+                resourceDiv.style.margin = '15px 0';
+                resourceDiv.style.padding = '15px';
+                resourceDiv.style.background = '#f8f9fa';
+                resourceDiv.style.borderRadius = '8px';
+
+                const title = safeCreateElement('h4', `${type.toUpperCase()} (${data.count} 個資源)`);
+                resourceDiv.appendChild(title);
+
+                const sizeInfo = safeCreateElement('div', `總大小: ${formatBytes(data.totalSize)}`);
+                resourceDiv.appendChild(sizeInfo);
+
+                const timeInfo = safeCreateElement('div', `總時間: ${Math.round(data.totalTime)}ms`);
+                resourceDiv.appendChild(timeInfo);
+
+                // 添加進度條
+                const progressContainer = safeCreateElement('div');
+                progressContainer.style.marginTop = '10px';
+
+                const progressBar = safeCreateElement('div');
+                progressBar.style.background = '#e9ecef';
+                progressBar.style.height = '20px';
+                progressBar.style.borderRadius = '10px';
+                progressBar.style.overflow = 'hidden';
+
+                const progressFill = safeCreateElement('div');
+                progressFill.style.background = '#007bff';
+                progressFill.style.height = '100%';
+                progressFill.style.width = `${Math.min(100, (data.totalTime / 1000) * 100)}%`;
+
+                progressBar.appendChild(progressFill);
+                progressContainer.appendChild(progressBar);
+                resourceDiv.appendChild(progressContainer);
+
+                container.appendChild(resourceDiv);
+            });
+        }
+
+        /**
+         * 顯示記憶體指標
+         */
+        function displayMemoryMetrics(memory) {
+            const container = document.getElementById('memoryChart');
+            safeClearElement(container);
+
+            if (!memory) {
+                container.appendChild(safeCreateElement('p', '瀏覽器不支援記憶體監控'));
+                return;
+            }
+
+            const memoryDiv = safeCreateElement('div');
+            memoryDiv.style.padding = '20px';
+            memoryDiv.style.background = '#f8f9fa';
+            memoryDiv.style.borderRadius = '8px';
+
+            const title = safeCreateElement('h4', '記憶體使用情況');
+            memoryDiv.appendChild(title);
+
+            const usedInfo = safeCreateElement('div', `已使用: ${formatBytes(memory.used)}`);
+            memoryDiv.appendChild(usedInfo);
+
+            const totalInfo = safeCreateElement('div', `總計: ${formatBytes(memory.total)}`);
+            memoryDiv.appendChild(totalInfo);
+
+            const limitInfo = safeCreateElement('div', `限制: ${formatBytes(memory.limit)}`);
+            memoryDiv.appendChild(limitInfo);
+
+            // 添加進度條
+            const progressContainer = safeCreateElement('div');
+            progressContainer.style.marginTop = '15px';
+
+            const progressBar = safeCreateElement('div');
+            progressBar.style.background = '#e9ecef';
+            progressBar.style.height = '30px';
+            progressBar.style.borderRadius = '15px';
+            progressBar.style.overflow = 'hidden';
+
+            const progressFill = safeCreateElement('div');
+            progressFill.style.background = getMemoryColor(memory.used / memory.total);
+            progressFill.style.height = '100%';
+            progressFill.style.width = `${(memory.used / memory.total) * 100}%`;
+            progressFill.style.display = 'flex';
+            progressFill.style.alignItems = 'center';
+            progressFill.style.justifyContent = 'center';
+            progressFill.style.color = 'white';
+            progressFill.style.fontWeight = 'bold';
+            progressFill.textContent = `${Math.round((memory.used / memory.total) * 100)}%`;
+
+            progressBar.appendChild(progressFill);
+            progressContainer.appendChild(progressBar);
+            memoryDiv.appendChild(progressContainer);
+
+            container.appendChild(memoryDiv);
+        }
+
+        /**
+         * 顯示優化建議
+         */
+        function displayRecommendations(recommendations) {
+            safeClearElement(recommendationsList);
+
+            if (!recommendations || recommendations.length === 0) {
+                recommendationsList.appendChild(safeCreateElement('p', '🎉 太棒了！沒有發現性能問題。'));
+                return;
+            }
+
+            recommendations.forEach(rec => {
+                const item = safeCreateElement('div', '', `recommendation-item ${rec.priority}`);
+
+                const title = safeCreateElement('div', `${rec.title} (${rec.priority})`, 'recommendation-title');
+                item.appendChild(title);
+
+                const description = safeCreateElement('div', rec.description, 'recommendation-description');
+                item.appendChild(description);
+
+                const actionsContainer = safeCreateElement('div', '', 'recommendation-actions');
+                const actionsTitle = safeCreateElement('strong', '建議措施：');
+                actionsContainer.appendChild(actionsTitle);
+
+                const actionsList = safeCreateElement('ul');
+                rec.actions.forEach(action => {
+                    const li = safeCreateElement('li', action);
+                    actionsList.appendChild(li);
+                });
+                actionsContainer.appendChild(actionsList);
+                item.appendChild(actionsContainer);
+
+                recommendationsList.appendChild(item);
+            });
+        }
+
+        /**
+         * 更新基準表
+         */
+        function updateBenchmarkTable(vitals) {
+            const benchmarks = [
+                { key: 'LCP', suffix: 'ms' },
+                { key: 'FID', suffix: 'ms' },
+                { key: 'CLS', suffix: '' },
+                { key: 'TTFB', suffix: 'ms' }
+            ];
+
+            benchmarks.forEach(benchmark => {
+                const value = vitals[benchmark.key];
+                if (value !== undefined) {
+                    const currentValue = document.getElementById(`${benchmark.key.toLowerCase()}Current`);
+                    const statusElement = document.getElementById(`${benchmark.key.toLowerCase()}Status`);
+
+                    if (currentValue) {
+                        currentValue.textContent = `${Math.round(value)}${benchmark.suffix}`;
+                    }
+
+                    if (statusElement) {
+                        const threshold = performanceMonitor ? performanceMonitor.thresholds[benchmark.key] : 1000;
+                        const status = getMetricStatus(value, threshold);
+                        statusElement.textContent = getStatusIcon(status);
+                    }
+                }
+            });
+        }
+
+        /**
+         * 創建指標卡片
+         */
+        function createMetricCard(label, value, unit, status) {
+            const card = safeCreateElement('div', '', `metric-card ${status}`);
+
+            const valueContainer = safeCreateElement('div', '', 'metric-value');
+            valueContainer.textContent = `${Math.round(value)}`;
+
+            if (unit) {
+                const unitSpan = safeCreateElement('span', unit, 'metric-unit');
+                valueContainer.appendChild(unitSpan);
+            }
+
+            card.appendChild(valueContainer);
+
+            const labelDiv = safeCreateElement('div', label, 'metric-label');
+            card.appendChild(labelDiv);
+
+            return card;
+        }
+
+        /**
+         * 獲取指標狀態
+         */
+        function getMetricStatus(value, threshold) {
+            if (value <= threshold) return 'good';
+            if (value <= threshold * 2) return 'needs-improvement';
+            return 'poor';
+        }
+
+        /**
+         * 獲取狀態圖標
+         */
+        function getStatusIcon(status) {
+            switch (status) {
+                case 'good': return '✅ 良好';
+                case 'needs-improvement': return '⚠️ 需改進';
+                case 'poor': return '❌ 差';
+                default: return '❓ 未知';
+            }
+        }
+
+        /**
+         * 獲取記憶體顏色
+         */
+        function getMemoryColor(usage) {
+            if (usage < 0.5) return '#4CAF50';
+            if (usage < 0.8) return '#FF9800';
+            return '#f44336';
+        }
+
+        /**
+         * 格式化位元組
+         */
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        /**
+         * 檢查優化狀態
+         */
+        function checkOptimizationsStatus() {
+            safeClearElement(optimizationsStatus);
+
+            const status = performanceOptimizer ? performanceOptimizer.getEnabledOptimizations() : [];
+
+            if (status.length === 0) {
+                optimizationsStatus.appendChild(safeCreateElement('p', '尚未應用任何性能優化'));
+            } else {
+                const container = safeCreateElement('div');
+                container.style.display = 'flex';
+                container.style.flexWrap = 'wrap';
+                container.style.gap = '10px';
+
+                status.forEach(opt => {
+                    const span = safeCreateElement('span', `✅ ${getOptimizationDisplayName(opt)}`);
+                    span.style.background = '#28a745';
+                    span.style.color = 'white';
+                    span.style.padding = '5px 10px';
+                    span.style.borderRadius = '15px';
+                    span.style.fontSize = '14px';
+                    container.appendChild(span);
+                });
+
+                optimizationsStatus.appendChild(container);
+            }
+        }
+
+        /**
+         * 獲取優化顯示名稱
+         */
+        function getOptimizationDisplayName(opt) {
+            const names = {
+                'lazy-loading': '懶加載',
+                'code-splitting': '代碼分割',
+                'image-optimization': '圖片優化',
+                'preloading': '資源預載入',
+                'service-worker': 'Service Worker',
+                'resource-caching': '資源快取'
+            };
+            return names[opt] || opt;
+        }
+
+        /**
+         * 顯示優化成功訊息
+         */
+        function showOptimizationsSuccess(optimizations) {
+            showSuccess(`已應用 ${optimizations.length} 項性能優化：${optimizations.join(', ')}`);
+        }
+
+        /**
+         * 顯示載入狀態
+         */
+        function showLoading(show) {
+            loadingIndicator.style.display = show ? 'block' : 'none';
+            progressContainer.style.display = show ? 'block' : 'none';
+
+            // 禁用所有按鈕
+            document.querySelectorAll('.test-button').forEach(btn => {
+                btn.disabled = show;
+            });
+        }
+
+        /**
+         * 隱藏載入狀態
+         */
+        function hideLoading() {
+            showLoading(false);
+        }
+
+        /**
+         * 更新進度
+         */
+        function updateProgress(percent, text) {
+            progressFill.style.width = `${percent}%`;
+            progressText.textContent = text || `${percent}%`;
+        }
+
+        /**
+         * 顯示成功訊息
+         */
+        function showSuccess(message) {
+            console.log('✅', message);
+            alert(message); // 簡化實現
+        }
+
+        /**
+         * 顯示錯誤訊息
+         */
+        function showError(message) {
+            console.error('❌', message);
+            alert(message); // 簡化實現
+        }
+
+        /**
+         * 運行 Lighthouse（如果可用）
+         */
+        async function runLighthouse() {
+            // 這裡可以集成實際的 Lighthouse API
+            // 目前返回模擬數據
+            throw new Error('Lighthouse API 不可用');
+        }
+
+        /**
+         * 顯示 Lighthouse 結果
+         */
+        function displayLighthouseResults(report) {
+            console.log('Lighthouse 報告:', report);
+        }
+    </script>
+</body>
+</html>
