@@ -1,0 +1,1157 @@
+/**
+ * UI 管理模組
+ *
+ * 負責管理應用程式的用戶界面，包括：
+ * - DOM 元素管理
+ * - 事件處理
+ * - 組件渲染
+ * - 用戶交互
+ * - 視圖更新
+ */
+
+export class UI {
+  constructor(settings, utils) {
+    this.settings = settings;
+    this.utils = utils;
+    this.elements = {};
+    this.components = {};
+    this.listeners = new Map();
+    this.currentFilter = 'all';
+    this.currentSort = 'created-desc';
+    this.searchQuery = '';
+    this.selectedTasks = new Set();
+  }
+
+  /**
+   * 初始化 UI 模組
+   */
+  async initialize() {
+    try {
+      // 快取 DOM 元素
+      this.cacheElements();
+
+      // 初始化組件
+      this.initializeComponents();
+
+      // 綁定事件監聽器
+      this.bindEventListeners();
+
+      // 應用初始設定
+      this.applyInitialSettings();
+
+      // 監聽設定變更
+      this.bindSettingsListeners();
+
+      console.log('✅ UI 模組初始化完成');
+    } catch (error) {
+      console.error('❌ UI 模組初始化失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 快取常用的 DOM 元素
+   */
+  cacheElements() {
+    this.elements = {
+      // 表單元素
+      taskForm: document.getElementById('taskForm'),
+      titleInput: document.getElementById('taskTitle'),
+      descriptionInput: document.getElementById('taskDescription'),
+      prioritySelect: document.getElementById('taskPriority'),
+      dueDateInput: document.getElementById('taskDueDate'),
+      tagsInput: document.getElementById('taskTags'),
+      addTaskBtn: document.getElementById('addTaskBtn'),
+      clearFormBtn: document.getElementById('clearFormBtn'),
+
+      // 控制元素
+      searchInput: document.getElementById('searchInput'),
+      searchClearBtn: document.getElementById('searchClearBtn'),
+      sortSelect: document.getElementById('sortSelect'),
+      filterButtons: document.querySelectorAll('.filter-btn'),
+      viewButtons: document.querySelectorAll('.view-btn'),
+
+      // 列表元素
+      taskList: document.getElementById('taskList'),
+      taskListContainer: document.getElementById('taskListContainer'),
+      emptyState: document.getElementById('emptyState'),
+      noResults: document.getElementById('noResults'),
+
+      // 統計元素
+      totalTasksCount: document.getElementById('totalTasksCount'),
+      completedTasksCount: document.getElementById('completedTasksCount'),
+
+      // 篩選計數元素
+      filterCounts: {
+        all: document.querySelector('[data-count="all"]'),
+        active: document.querySelector('[data-count="active"]'),
+        completed: document.querySelector('[data-count="completed"]')
+      },
+
+      // 批量操作元素
+      bulkActions: document.getElementById('bulkActions'),
+      selectedCount: document.getElementById('selectedCount'),
+      selectAllBtn: document.getElementById('selectAllBtn'),
+      markCompleteBtn: document.getElementById('markCompleteBtn'),
+      deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
+
+      // 模態框元素
+      confirmModal: document.getElementById('confirmModal'),
+      confirmModalTitle: document.getElementById('confirmModalTitle'),
+      confirmModalDescription: document.getElementById('confirmModalDescription'),
+      confirmModalCancel: document.getElementById('confirmModalCancel'),
+      confirmModalConfirm: document.getElementById('confirmModalConfirm'),
+
+      // 通知容器
+      notificationContainer: document.getElementById('notificationContainer'),
+
+      // 載入指示器
+      loadingOverlay: document.getElementById('loadingOverlay'),
+
+      // 空狀態按鈕
+      emptyStateAddBtn: document.getElementById('emptyStateAddBtn')
+    };
+  }
+
+  /**
+   * 初始化組件
+   */
+  initializeComponents() {
+    // 初始化任務輸入組件
+    this.components.taskInput = new TaskInput(this.elements, this.utils);
+
+    // 初始化任務列表組件
+    this.components.taskList = new TaskList(this.elements, this.utils);
+
+    // 初始化控制組件
+    this.components.controls = new Controls(this.elements, this.utils);
+
+    // 初始化通知組件
+    this.components.notifications = new Notifications(this.elements.notificationContainer);
+  }
+
+  /**
+   * 綁定事件監聽器
+   */
+  bindEventListeners() {
+    // 任務表單事件
+    this.bindFormEvents();
+
+    // 搜尋和篩選事件
+    this.bindSearchEvents();
+    this.bindFilterEvents();
+    this.bindSortEvents();
+
+    // 批量操作事件
+    this.bindBulkActionEvents();
+
+    // 模態框事件
+    this.bindModalEvents();
+
+    // 鍵盤快捷鍵
+    this.bindKeyboardEvents();
+
+    // 視圖切換事件
+    this.bindViewEvents();
+  }
+
+  /**
+   * 綁定表單事件
+   */
+  bindFormEvents() {
+    if (this.elements.taskForm) {
+      this.elements.taskForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleTaskSubmit();
+      });
+    }
+
+    if (this.elements.clearFormBtn) {
+      this.elements.clearFormBtn.addEventListener('click', () => {
+        this.clearTaskForm();
+      });
+    }
+
+    // 輸入驗證
+    if (this.elements.titleInput) {
+      this.elements.titleInput.addEventListener('input', (e) => {
+        this.validateTitleInput(e.target);
+      });
+    }
+  }
+
+  /**
+   * 綁定搜尋事件
+   */
+  bindSearchEvents() {
+    if (this.elements.searchInput) {
+      // 使用防抖優化搜尋性能
+      const debouncedSearch = this.utils.debounce((query) => {
+        this.handleSearch(query);
+      }, 300);
+
+      this.elements.searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        this.searchQuery = query;
+
+        // 顯示/隱藏清除按鈕
+        if (this.elements.searchClearBtn) {
+          this.elements.searchClearBtn.style.display = query ? 'block' : 'none';
+        }
+
+        debouncedSearch(query);
+      });
+    }
+
+    if (this.elements.searchClearBtn) {
+      this.elements.searchClearBtn.addEventListener('click', () => {
+        this.clearSearch();
+      });
+    }
+  }
+
+  /**
+   * 綁定篩選事件
+   */
+  bindFilterEvents() {
+    this.elements.filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const filter = button.dataset.filter;
+        this.setActiveFilter(filter);
+      });
+    });
+  }
+
+  /**
+   * 綁定排序事件
+   */
+  bindSortEvents() {
+    if (this.elements.sortSelect) {
+      this.elements.sortSelect.addEventListener('change', (e) => {
+        this.currentSort = e.target.value;
+        this.notifyListeners('sortChanged', this.currentSort);
+      });
+    }
+  }
+
+  /**
+   * 綁定批量操作事件
+   */
+  bindBulkActionEvents() {
+    if (this.elements.selectAllBtn) {
+      this.elements.selectAllBtn.addEventListener('click', () => {
+        this.toggleSelectAll();
+      });
+    }
+
+    if (this.elements.markCompleteBtn) {
+      this.elements.markCompleteBtn.addEventListener('click', () => {
+        this.markSelectedAsCompleted();
+      });
+    }
+
+    if (this.elements.deleteSelectedBtn) {
+      this.elements.deleteSelectedBtn.addEventListener('click', () => {
+        this.deleteSelectedTasks();
+      });
+    }
+  }
+
+  /**
+   * 綁定模態框事件
+   */
+  bindModalEvents() {
+    if (this.elements.confirmModalClose) {
+      this.elements.confirmModalClose.addEventListener('click', () => {
+        this.hideModal();
+      });
+    }
+
+    if (this.elements.confirmModalCancel) {
+      this.elements.confirmModalCancel.addEventListener('click', () => {
+        this.hideModal();
+      });
+    }
+
+    // 點擊背景關閉模態框
+    if (this.elements.confirmModal) {
+      this.elements.confirmModal.addEventListener('click', (e) => {
+        if (e.target === this.elements.confirmModal) {
+          this.hideModal();
+        }
+      });
+    }
+  }
+
+  /**
+   * 綁定鍵盤事件
+   */
+  bindKeyboardEvents() {
+    document.addEventListener('keydown', (e) => {
+      // Escape 鍵處理
+      if (e.key === 'Escape') {
+        if (this.isModalVisible()) {
+          this.hideModal();
+        } else if (this.searchQuery) {
+          this.clearSearch();
+        }
+      }
+    });
+  }
+
+  /**
+   * 綁定視圖切換事件
+   */
+  bindViewEvents() {
+    this.elements.viewButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const view = button.dataset.view;
+        this.setViewMode(view);
+      });
+    });
+  }
+
+  /**
+   * 應用初始設定
+   */
+  applyInitialSettings() {
+    // 設定預設排序方式
+    const defaultSort = this.settings.get('tasks.defaultSortBy', 'created-desc');
+    this.currentSort = defaultSort;
+    if (this.elements.sortSelect) {
+      this.elements.sortSelect.value = defaultSort;
+    }
+
+    // 設定預設視圖模式
+    const defaultView = this.settings.get('ui.viewMode', 'list');
+    this.setViewMode(defaultView);
+
+    // 設定動畫
+    const animationsEnabled = this.settings.get('ui.animations', true);
+    this.toggleAnimations(animationsEnabled);
+  }
+
+  /**
+   * 綁定設定監聽器
+   */
+  bindSettingsListeners() {
+    this.settings.onChange('ui.animations', (enabled) => {
+      this.toggleAnimations(enabled);
+    });
+
+    this.settings.onChange('ui.viewMode', (viewMode) => {
+      this.setViewMode(viewMode);
+    });
+  }
+
+  /**
+   * ========== 任務輸入處理 ==========
+   */
+
+  /**
+   * 處理任務提交
+   */
+  async handleTaskSubmit() {
+    if (!this.components.taskInput.validate()) {
+      return;
+    }
+
+    const taskData = this.components.taskInput.getTaskData();
+
+    try {
+      // 通知儲存模組添加任務
+      this.notifyListeners('taskAddRequested', taskData);
+
+      // 清空表單
+      this.clearTaskForm();
+
+      // 顯示成功通知
+      this.showNotification('任務添加成功', 'success');
+
+    } catch (error) {
+      console.error('添加任務失敗:', error);
+      this.showNotification('添加任務失敗，請重試', 'error');
+    }
+  }
+
+  /**
+   * 清空任務表單
+   */
+  clearTaskForm() {
+    this.components.taskInput.clear();
+
+    // 清除錯誤狀態
+    this.clearFormErrors();
+  }
+
+  /**
+   * 清除表單錯誤
+   */
+  clearFormErrors() {
+    const errorElements = this.elements.taskForm.querySelectorAll('.has-error');
+    errorElements.forEach(element => {
+      element.classList.remove('has-error');
+    });
+
+    const errorMessages = this.elements.taskForm.querySelectorAll('.error-message');
+    errorMessages.forEach(element => {
+      element.textContent = '';
+    });
+  }
+
+  /**
+   * 驗證標題輸入
+   * @param {HTMLInputElement} input - 輸入元素
+   */
+  validateTitleInput(input) {
+    const validation = this.utils.validateTaskTitle(input.value);
+    const formGroup = input.closest('.form-group');
+    const errorElement = formGroup.querySelector('.error-message');
+
+    if (validation.isValid) {
+      formGroup.classList.remove('has-error');
+      errorElement.textContent = '';
+    } else {
+      formGroup.classList.add('has-error');
+      errorElement.textContent = validation.message;
+    }
+
+    return validation.isValid;
+  }
+
+  /**
+   * ========== 搜尋和篩選處理 ==========
+   */
+
+  /**
+   * 處理搜尋
+   * @param {string} query - 搜尋查詢
+   */
+  handleSearch(query) {
+    this.notifyListeners('searchChanged', {
+      query,
+      filter: this.currentFilter,
+      sort: this.currentSort
+    });
+  }
+
+  /**
+   * 清除搜尋
+   */
+  clearSearch() {
+    if (this.elements.searchInput) {
+      this.elements.searchInput.value = '';
+    }
+    this.searchQuery = '';
+
+    if (this.elements.searchClearBtn) {
+      this.elements.searchClearBtn.style.display = 'none';
+    }
+
+    this.handleSearch('');
+  }
+
+  /**
+   * 設定活動篩選器
+   * @param {string} filter - 篩選器類型
+   */
+  setActiveFilter(filter) {
+    this.currentFilter = filter;
+
+    // 更新按鈕狀態
+    this.elements.filterButtons.forEach(button => {
+      const isActive = button.dataset.filter === filter;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-selected', isActive);
+    });
+
+    // 通知其他組件
+    this.notifyListeners('filterChanged', {
+      filter,
+      query: this.searchQuery,
+      sort: this.currentSort
+    });
+  }
+
+  /**
+   * ========== 任務列表管理 ==========
+   */
+
+  /**
+   * 渲染任務列表
+   * @param {Array} tasks - 任務陣列
+   */
+  renderTasks(tasks) {
+    this.components.taskList.render(tasks);
+
+    // 更新統計資訊
+    this.updateTaskStats(tasks);
+
+    // 更新篩選計數
+    this.updateFilterCounts();
+
+    // 顯示/隱藏空狀態
+    this.toggleEmptyState(tasks.length === 0);
+  }
+
+  /**
+   * 更新任務統計
+   * @param {Array} tasks - 任務陣列
+   */
+  updateTaskStats(tasks) {
+    const total = tasks.length;
+    const completed = tasks.filter(task => task.status === 'completed').length;
+
+    if (this.elements.totalTasksCount) {
+      this.elements.totalTasksCount.textContent = total;
+    }
+
+    if (this.elements.completedTasksCount) {
+      this.elements.completedTasksCount.textContent = completed;
+    }
+  }
+
+  /**
+   * 更新篩選計數
+   */
+  updateFilterCounts() {
+    // 這需要從儲存模組獲取實際數據
+    this.notifyListeners('requestFilterCounts');
+  }
+
+  /**
+   * 設定篩選計數
+   * @param {Object} counts - 計數對象
+   */
+  setFilterCounts(counts) {
+    if (this.elements.filterCounts.all) {
+      this.elements.filterCounts.all.textContent = counts.all;
+    }
+    if (this.elements.filterCounts.active) {
+      this.elements.filterCounts.active.textContent = counts.active;
+    }
+    if (this.elements.filterCounts.completed) {
+      this.elements.filterCounts.completed.textContent = counts.completed;
+    }
+  }
+
+  /**
+   * 切換空狀態顯示
+   * @param {boolean} show - 是否顯示
+   */
+  toggleEmptyState(show) {
+    const hasSearch = this.searchQuery.length > 0;
+
+    if (show && !hasSearch) {
+      // 顯示空狀態
+      if (this.elements.emptyState) {
+        this.elements.emptyState.style.display = 'block';
+      }
+      if (this.elements.noResults) {
+        this.elements.noResults.style.display = 'none';
+      }
+    } else if (show && hasSearch) {
+      // 顯示無搜尋結果
+      if (this.elements.emptyState) {
+        this.elements.emptyState.style.display = 'none';
+      }
+      if (this.elements.noResults) {
+        this.elements.noResults.style.display = 'block';
+      }
+    } else {
+      // 隱藏所有空狀態
+      if (this.elements.emptyState) {
+        this.elements.emptyState.style.display = 'none';
+      }
+      if (this.elements.noResults) {
+        this.elements.noResults.style.display = 'none';
+      }
+    }
+  }
+
+  /**
+   * ========== 視圖管理 ==========
+   */
+
+  /**
+   * 設定視圖模式
+   * @param {string} mode - 視圖模式 ('list' 或 'grid')
+   */
+  setViewMode(mode) {
+    // 更新按鈕狀態
+    this.elements.viewButtons.forEach(button => {
+      const isActive = button.dataset.view === mode;
+      button.classList.toggle('active', isActive);
+    });
+
+    // 更新列表樣式
+    if (this.elements.taskList) {
+      this.elements.taskList.className = `task-list view-${mode}`;
+    }
+
+    // 儲存設定
+    this.settings.set('ui.viewMode', mode);
+  }
+
+  /**
+   * ========== 批量操作 ==========
+   */
+
+  /**
+   * 切換選取所有任務
+   */
+  toggleSelectAll() {
+    const allTasks = this.components.taskList.getAllTaskElements();
+    const allSelected = this.selectedTasks.size === allTasks.length;
+
+    if (allSelected) {
+      // 取消選取所有
+      this.clearSelection();
+    } else {
+      // 選取所有
+      this.selectAllTasks();
+    }
+
+    this.updateBulkActionsUI();
+  }
+
+  /**
+   * 選取所有任務
+   */
+  selectAllTasks() {
+    const allTasks = this.components.taskList.getAllTaskElements();
+    allTasks.forEach(taskElement => {
+      const taskId = taskElement.dataset.taskId;
+      if (taskId) {
+        this.selectedTasks.add(taskId);
+        taskElement.classList.add('selected');
+      }
+    });
+  }
+
+  /**
+   * 清除選取
+   */
+  clearSelection() {
+    this.selectedTasks.clear();
+    const selectedElements = this.elements.taskList.querySelectorAll('.task-item.selected');
+    selectedElements.forEach(element => {
+      element.classList.remove('selected');
+    });
+  }
+
+  /**
+   * 切換任務選取狀態
+   * @param {string} taskId - 任務 ID
+   * @param {HTMLElement} taskElement - 任務元素
+   */
+  toggleTaskSelection(taskId, taskElement) {
+    if (this.selectedTasks.has(taskId)) {
+      this.selectedTasks.delete(taskId);
+      taskElement.classList.remove('selected');
+    } else {
+      this.selectedTasks.add(taskId);
+      taskElement.classList.add('selected');
+    }
+
+    this.updateBulkActionsUI();
+  }
+
+  /**
+   * 更新批量操作 UI
+   */
+  updateBulkActionsUI() {
+    const hasSelection = this.selectedTasks.size > 0;
+
+    if (this.elements.bulkActions) {
+      this.elements.bulkActions.style.display = hasSelection ? 'block' : 'none';
+    }
+
+    if (this.elements.selectedCount) {
+      this.elements.selectedCount.textContent = this.selectedTasks.size;
+    }
+
+    // 更新全選按鈕文字
+    if (this.elements.selectAllBtn) {
+      const allTasks = this.components.taskList.getAllTaskElements();
+      const allSelected = this.selectedTasks.size === allTasks.length && allTasks.length > 0;
+      this.elements.selectAllBtn.textContent = allSelected ? '取消全選' : '全選';
+    }
+  }
+
+  /**
+   * 標記選取的任務為已完成
+   */
+  markSelectedAsCompleted() {
+    if (this.selectedTasks.size === 0) return;
+
+    const taskIds = Array.from(this.selectedTasks);
+    this.notifyListeners('tasksStatusUpdateRequested', {
+      taskIds,
+      status: 'completed'
+    });
+
+    this.clearSelection();
+    this.updateBulkActionsUI();
+  }
+
+  /**
+   * 刪除選取的任務
+   */
+  deleteSelectedTasks() {
+    if (this.selectedTasks.size === 0) return;
+
+    this.showConfirmDialog(
+      '確認刪除',
+      `確定要刪除選取的 ${this.selectedTasks.size} 項任務嗎？此操作無法復原。`,
+      () => {
+        const taskIds = Array.from(this.selectedTasks);
+        this.notifyListeners('tasksDeleteRequested', taskIds);
+        this.clearSelection();
+        this.updateBulkActionsUI();
+      }
+    );
+  }
+
+  /**
+   * ========== 模態框管理 ==========
+   */
+
+  /**
+   * 顯示確認對話框
+   * @param {string} title - 標題
+   * @param {string} description - 描述
+   * @param {Function} onConfirm - 確認回調
+   * @param {Function} onCancel - 取消回調
+   */
+  showConfirmDialog(title, description, onConfirm, onCancel = null) {
+    if (!this.elements.confirmModal) return;
+
+    // 設定內容
+    if (this.elements.confirmModalTitle) {
+      this.elements.confirmModalTitle.textContent = title;
+    }
+    if (this.elements.confirmModalDescription) {
+      this.elements.confirmModalDescription.textContent = description;
+    }
+
+    // 綁定事件
+    const confirmHandler = () => {
+      this.hideModal();
+      if (onConfirm) onConfirm();
+    };
+
+    const cancelHandler = () => {
+      this.hideModal();
+      if (onCancel) onCancel();
+    };
+
+    // 移除舊的事件監聽器
+    if (this.elements.confirmModalConfirm) {
+      this.elements.confirmModalConfirm.replaceWith(
+        this.elements.confirmModalConfirm.cloneNode(true)
+      );
+      this.elements.confirmModalConfirm = document.getElementById('confirmModalConfirm');
+      this.elements.confirmModalConfirm.addEventListener('click', confirmHandler);
+    }
+
+    if (this.elements.confirmModalCancel) {
+      this.elements.confirmModalCancel.replaceWith(
+        this.elements.confirmModalCancel.cloneNode(true)
+      );
+      this.elements.confirmModalCancel = document.getElementById('confirmModalCancel');
+      this.elements.confirmModalCancel.addEventListener('click', cancelHandler);
+    }
+
+    // 顯示模態框
+    this.elements.confirmModal.setAttribute('aria-hidden', 'false');
+    this.elements.confirmModal.querySelector('.modal').focus();
+  }
+
+  /**
+   * 隱藏模態框
+   */
+  hideModal() {
+    if (this.elements.confirmModal) {
+      this.elements.confirmModal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  /**
+   * 檢查模態框是否可見
+   * @returns {boolean}
+   */
+  isModalVisible() {
+    return this.elements.confirmModal &&
+           this.elements.confirmModal.getAttribute('aria-hidden') === 'false';
+  }
+
+  /**
+   * ========== 通知系統 ==========
+   */
+
+  /**
+   * 顯示通知
+   * @param {string} message - 訊息
+   * @param {string} type - 類型 ('success', 'error', 'warning', 'info')
+   * @param {string} title - 標題（可選）
+   */
+  showNotification(message, type = 'info', title = null) {
+    this.components.notifications.show(message, type, title);
+  }
+
+  /**
+   * ========== 動畫和效果 ==========
+   */
+
+  /**
+   * 切換動畫
+   * @param {boolean} enabled - 是否啟用
+   */
+  toggleAnimations(enabled) {
+    const root = document.documentElement;
+    if (enabled) {
+      root.style.removeProperty('--transition-duration');
+    } else {
+      root.style.setProperty('--transition-duration', '0s');
+    }
+  }
+
+  /**
+   * ========== 事件系統 ==========
+   */
+
+  /**
+   * 監聽 UI 事件
+   * @param {string} event - 事件名稱
+   * @param {Function} callback - 回調函數
+   * @returns {Function} 取消監聽的函數
+   */
+  on(event, callback) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+
+    this.listeners.get(event).add(callback);
+
+    return () => {
+      const eventListeners = this.listeners.get(event);
+      if (eventListeners) {
+        eventListeners.delete(callback);
+        if (eventListeners.size === 0) {
+          this.listeners.delete(event);
+        }
+      }
+    };
+  }
+
+  /**
+   * 通知事件監聽器
+   * @param {string} event - 事件名稱
+   * @param {...*} args - 事件參數
+   */
+  notifyListeners(event, ...args) {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event).forEach(callback => {
+        try {
+          callback(...args);
+        } catch (error) {
+          console.error(`UI 事件監聽器執行失敗 (${event}):`, error);
+        }
+      });
+    }
+  }
+
+  /**
+   * ========== 清理資源 ==========
+   */
+
+  /**
+   * 清理 UI 模組
+   */
+  destroy() {
+    this.listeners.clear();
+    this.selectedTasks.clear();
+
+    // 清理組件
+    Object.values(this.components).forEach(component => {
+      if (component.destroy) {
+        component.destroy();
+      }
+    });
+
+    console.log('🧹 UI 模組已清理');
+  }
+}
+
+/**
+ * 任務輸入組件
+ */
+class TaskInput {
+  constructor(elements, utils) {
+    this.elements = elements;
+    this.utils = utils;
+  }
+
+  validate() {
+    let isValid = true;
+
+    // 驗證標題
+    if (this.elements.titleInput) {
+      const titleValidation = this.utils.validateTaskTitle(this.elements.titleInput.value);
+      if (!titleValidation.isValid) {
+        const formGroup = this.elements.titleInput.closest('.form-group');
+        formGroup.classList.add('has-error');
+        const errorElement = formGroup.querySelector('.error-message');
+        if (errorElement) {
+          errorElement.textContent = titleValidation.message;
+        }
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  getTaskData() {
+    const tags = this.elements.tagsInput.value
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+
+    return {
+      title: this.elements.titleInput.value.trim(),
+      description: this.elements.descriptionInput.value.trim(),
+      priority: this.elements.prioritySelect.value,
+      dueDate: this.elements.dueDateInput.value || null,
+      tags
+    };
+  }
+
+  clear() {
+    if (this.elements.taskForm) {
+      this.elements.taskForm.reset();
+    }
+    this.clearErrors();
+  }
+
+  clearErrors() {
+    const errorGroups = this.elements.taskForm.querySelectorAll('.form-group.has-error');
+    errorGroups.forEach(group => {
+      group.classList.remove('has-error');
+    });
+
+    const errorMessages = this.elements.taskForm.querySelectorAll('.error-message');
+    errorMessages.forEach(message => {
+      message.textContent = '';
+    });
+  }
+}
+
+/**
+ * 任務列表組件
+ */
+class TaskList {
+  constructor(elements, utils) {
+    this.elements = elements;
+    this.utils = utils;
+  }
+
+  render(tasks) {
+    if (!this.elements.taskList) return;
+
+    this.elements.taskList.innerHTML = '';
+
+    tasks.forEach(task => {
+      const taskElement = this.createTaskElement(task);
+      this.elements.taskList.appendChild(taskElement);
+    });
+  }
+
+  createTaskElement(task) {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.dataset.taskId = task.id;
+
+    if (task.status === 'completed') {
+      li.classList.add('completed');
+    }
+
+    // 複選框
+    const checkbox = document.createElement('div');
+    checkbox.className = 'task-checkbox';
+    if (task.status === 'completed') {
+      checkbox.classList.add('checked');
+    }
+    checkbox.setAttribute('role', 'checkbox');
+    checkbox.setAttribute('aria-checked', task.status === 'completed');
+    checkbox.setAttribute('tabindex', '0');
+
+    // 內容
+    const content = document.createElement('div');
+    content.className = 'task-content';
+
+    // 標題
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = task.title;
+
+    content.appendChild(title);
+
+    // 描述
+    if (task.description) {
+      const description = document.createElement('div');
+      description.className = 'task-description';
+      description.textContent = this.utils.truncateString(task.description, 100);
+      content.appendChild(description);
+    }
+
+    // 元數據
+    const meta = document.createElement('div');
+    meta.className = 'task-meta';
+
+    // 優先級
+    const priority = document.createElement('span');
+    priority.className = `task-priority ${task.priority}`;
+    priority.textContent = this.getPriorityLabel(task.priority);
+    meta.appendChild(priority);
+
+    // 截止日期
+    if (task.dueDate) {
+      const dueDate = document.createElement('span');
+      dueDate.className = 'task-due-date';
+      dueDate.textContent = this.utils.formatRelativeTime(task.dueDate);
+      meta.appendChild(dueDate);
+    }
+
+    // 標籤
+    if (task.tags && task.tags.length > 0) {
+      const tags = document.createElement('div');
+      tags.className = 'task-tags';
+
+      task.tags.slice(0, 3).forEach(tag => {
+        const tagElement = document.createElement('span');
+        tagElement.className = 'task-tag';
+        tagElement.textContent = tag;
+        tags.appendChild(tagElement);
+      });
+
+      meta.appendChild(tags);
+    }
+
+    content.appendChild(meta);
+
+    // 操作按鈕
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'task-action-btn';
+    editBtn.textContent = '✏️';
+    editBtn.setAttribute('aria-label', '編輯任務');
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'task-action-btn delete';
+    deleteBtn.textContent = '🗑️';
+    deleteBtn.setAttribute('aria-label', '刪除任務');
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+
+    li.appendChild(checkbox);
+    li.appendChild(content);
+    li.appendChild(actions);
+
+    return li;
+  }
+
+  getPriorityLabel(priority) {
+    const labels = {
+      high: '🔴 高',
+      medium: '🟡 中',
+      low: '🟢 低'
+    };
+    return labels[priority] || '🟡 中';
+  }
+
+  getAllTaskElements() {
+    return Array.from(this.elements.taskList.querySelectorAll('.task-item'));
+  }
+}
+
+/**
+ * 控制組件
+ */
+class Controls {
+  constructor(elements, utils) {
+    this.elements = elements;
+    this.utils = utils;
+  }
+}
+
+/**
+ * 通知組件
+ */
+class Notifications {
+  constructor(container) {
+    this.container = container;
+  }
+
+  show(message, type = 'info', title = null) {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+
+    const icon = document.createElement('div');
+    icon.className = 'notification-icon';
+    icon.textContent = this.getIcon(type);
+
+    const content = document.createElement('div');
+    content.className = 'notification-content';
+
+    if (title) {
+      const titleElement = document.createElement('div');
+      titleElement.className = 'notification-title';
+      titleElement.textContent = title;
+      content.appendChild(titleElement);
+    }
+
+    const messageElement = document.createElement('div');
+    messageElement.className = 'notification-message';
+    messageElement.textContent = message;
+    content.appendChild(messageElement);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'notification-close';
+    closeBtn.setAttribute('aria-label', '關閉通知');
+    closeBtn.textContent = '✕';
+
+    closeBtn.addEventListener('click', () => {
+      notification.style.animation = 'slideOutRight 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    });
+
+    notification.appendChild(icon);
+    notification.appendChild(content);
+    notification.appendChild(closeBtn);
+
+    this.container.appendChild(notification);
+
+    // 自動移除
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }
+    }, 3000);
+  }
+
+  getIcon(type) {
+    const icons = {
+      success: '✅',
+      error: '❌',
+      warning: '⚠️',
+      info: 'ℹ️'
+    };
+    return icons[type] || icons.info;
+  }
+}
