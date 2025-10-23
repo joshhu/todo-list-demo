@@ -144,11 +144,10 @@ export class UI {
   setStorage(storage) {
     this.storage = storage;
 
-    // 如果組件已經初始化，現在初始化狀態管理器和編輯組件
+    // 如果組件已經初始化，現在初始化狀態管理器
     if (this.components.taskInput) {
       this.initializeStatusManager();
       this.initializeProgressTracker();
-      this.initializeEditingComponents();
     }
   }
 
