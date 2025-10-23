@@ -1,0 +1,546 @@
+---
+type: task
+id: 006
+title: Task Editing & Deletion
+epic: todo-list
+status: pending
+priority: high
+assignee: ""
+labels: ["frontend", "ui", "user-experience", "forms"]
+created_at: 2025-10-23
+updated_at: 2025-10-23
+estimated_hours: 7
+actual_hours: 0
+story_points: 4
+dependencies: ["001", "002", "003", "004", "005"]
+blockers: []
+related_tasks: []
+---
+
+## 任務描述
+
+實現任務內容編輯和刪除功能，包括確認對話框、內聯編輯、表單驗證和用戶友好的交互體驗。這個任務專注於提供直觀、安全的任務管理操作，防止誤操作並提供良好的用戶反饋。
+
+## 驗收標準
+
+### 編輯功能需求
+- [ ] 支持內聯編輯（點擊即編輯）
+- [ ] 提供專用編輯模式（雙擊或編輯按鈕）
+- [ ] 實時保存和自動保存功能
+- [ ] 編輯歷史記錄和撤銷功能
+- [ ] 表單驗證和錯誤提示
+- [ ] 編輯狀態的視覺指示
+
+### 刪除功能需求
+- [ ] 安全刪除確認對話框
+- [ ] 批量刪除功能
+- [ ] 軟刪除（回收站）機制
+- [ ] 刪除歷史記錄
+- [ ] 刪除確認的超時機制
+- [ ] 緊急刪除快捷方式
+
+### 用戶體驗需求
+- [ ] 流暢的編輯模式切換
+- [ ] 鍵盤快捷鍵支持
+- [ ] 觸摸設備友好
+- [ ] 無障礙訪問支持
+- [ ] 多語言支持
+- [ ] 響應式設計
+
+## 技術實現細節
+
+### 後端實現
+
+#### 編輯 API 增強
+```typescript
+// 支援部分更新的編輯 API
+PATCH /api/tasks/:id
+{
+  title?: string;
+  description?: string;
+  dueDate?: Date;
+  priority?: 'low' | 'medium' | 'high';
+  tags?: string[];
+}
+
+// 批量刪除 API
+DELETE /api/tasks/batch
+{
+  taskIds: string[];
+  permanent?: boolean;
+}
+
+// 軟刪除恢復 API
+POST /api/tasks/:id/restore
+```
+
+#### 數據庫結構更新
+```sql
+-- 添加軟刪除支持
+ALTER TABLE tasks ADD COLUMN deleted_at TIMESTAMP NULL;
+ALTER TABLE tasks ADD COLUMN deleted_by UUID NULL REFERENCES users(id);
+
+-- 添加編輯歷史表
+CREATE TABLE task_edit_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES tasks(id),
+  field_name VARCHAR(50) NOT NULL,
+  old_value TEXT,
+  new_value TEXT,
+  edited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  edited_by UUID NOT NULL REFERENCES users(id)
+);
+
+-- 創建回收站表
+CREATE TABLE task_recycle_bin (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES tasks(id),
+  deleted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_by UUID NOT NULL REFERENCES users(id),
+  expires_at TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 days')
+);
+
+-- 索引優化
+CREATE INDEX idx_tasks_deleted_at ON tasks(deleted_at);
+CREATE INDEX idx_task_edit_history_task_id ON task_edit_history(task_id);
+CREATE INDEX idx_task_edit_history_edited_at ON task_edit_history(edited_at);
+```
+
+### 前端實現
+
+#### 編輯組件架構
+```typescript
+// 內聯編輯組件
+interface InlineEditProps {
+  value: string;
+  onSave: (value: string) => Promise<void>;
+  placeholder?: string;
+  maxLength?: number;
+  multiline?: boolean;
+  autoSave?: boolean;
+  debounceMs?: number;
+}
+
+// 編輯模式組件
+interface TaskEditorProps {
+  task: Task;
+  mode: 'inline' | 'modal' | 'drawer';
+  onSave: (task: Partial<Task>) => Promise<void>;
+  onCancel: () => void;
+  autoSave?: boolean;
+}
+
+// 確認對話框組件
+interface ConfirmDialogProps {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'warning' | 'info';
+  onConfirm: () => Promise<void>;
+  onCancel: () => void;
+  timeout?: number;
+}
+```
+
+#### 狀態管理增強
+```typescript
+// 編輯狀態管理
+interface EditingState {
+  editingTasks: Set<string>;
+  editingFields: Record<string, string[]>;
+  pendingChanges: Record<string, Partial<Task>>;
+  editHistory: TaskEditHistory[];
+  isAutoSaving: boolean;
+  lastSavedAt: Date | null;
+}
+
+// 刪除狀態管理
+interface DeletionState {
+  deletingTasks: Set<string>;
+  recycleBin: Task[];
+  selectedForDeletion: string[];
+  deleteConfirmations: Record<string, boolean>;
+}
+```
+
+#### 表單驗證系統
+```typescript
+// 驗證規則定義
+const validationRules = {
+  title: {
+    required: true,
+    minLength: 1,
+    maxLength: 255,
+    pattern: /^[^<>]*$/,
+    message: {
+      required: '任務標題不能為空',
+      minLength: '任務標題至少需要 1 個字符',
+      maxLength: '任務標題不能超過 255 個字符',
+      pattern: '任務標題不能包含 HTML 標籤'
+    }
+  },
+  description: {
+    maxLength: 2000,
+    message: {
+      maxLength: '任務描述不能超過 2000 個字符'
+    }
+  }
+};
+
+// 驗證 Hook
+const useValidation = (rules: ValidationRules) => {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = (data: Record<string, any>) => {
+    const newErrors: Record<string, string> = {};
+
+    Object.keys(rules).forEach(field => {
+      const rule = rules[field];
+      const value = data[field];
+
+      if (rule.required && !value) {
+        newErrors[field] = rule.message.required;
+      } else if (rule.minLength && value.length < rule.minLength) {
+        newErrors[field] = rule.message.minLength;
+      } else if (rule.maxLength && value.length > rule.maxLength) {
+        newErrors[field] = rule.message.maxLength;
+      } else if (rule.pattern && !rule.pattern.test(value)) {
+        newErrors[field] = rule.message.pattern;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  return { errors, validate, clearErrors: () => setErrors({}) };
+};
+```
+
+### 用戶交互設計
+
+#### 內聯編輯實現
+```typescript
+const InlineEditor = ({ value, onSave, ...props }: InlineEditProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = () => {
+    setIsEditing(true);
+    setEditValue(value);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const saveEdit = async () => {
+    if (editValue === value) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await onSave(editValue);
+      setIsEditing(false);
+    } catch (error) {
+      // 處理保存錯誤
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditValue(value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEdit();
+    }
+  };
+
+  return (
+    <div className="inline-editor">
+      {isEditing ? (
+        <div className="editing-container">
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={saveEdit}
+            disabled={isSaving}
+            className="editing-input"
+            {...props}
+          />
+          {isSaving && <LoadingSpinner size="small" />}
+        </div>
+      ) : (
+        <div
+          className="display-value"
+          onClick={startEdit}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && startEdit()}
+        >
+          {value || <span className="placeholder">{props.placeholder}</span>}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+#### 確認對話框實現
+```typescript
+const ConfirmDialog = ({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  timeout = 0,
+  type = 'danger'
+}: ConfirmDialogProps) => {
+  const [countdown, setCountdown] = useState(timeout);
+  const [canConfirm, setCanConfirm] = useState(timeout === 0);
+
+  useEffect(() => {
+    if (timeout > 0 && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } else if (countdown === 0 && timeout > 0) {
+      setCanConfirm(true);
+    }
+  }, [countdown, timeout]);
+
+  const handleConfirm = async () => {
+    if (canConfirm) {
+      await onConfirm();
+    }
+  };
+
+  return (
+    <Modal isOpen={true} onClose={onCancel}>
+      <div className={`confirm-dialog confirm-dialog--${type}`}>
+        <div className="confirm-dialog__header">
+          <Icon name={type === 'danger' ? 'warning' : 'info'} />
+          <h3>{title}</h3>
+        </div>
+
+        <div className="confirm-dialog__body">
+          <p>{message}</p>
+
+          {type === 'danger' && (
+            <div className="confirm-dialog__warning">
+              此操作無法撤銷，請謹慎操作。
+            </div>
+          )}
+        </div>
+
+        <div className="confirm-dialog__footer">
+          <button
+            onClick={onCancel}
+            className="btn btn--secondary"
+          >
+            取消
+          </button>
+
+          <button
+            onClick={handleConfirm}
+            disabled={!canConfirm}
+            className={`btn btn--${type === 'danger' ? 'danger' : 'primary'}`}
+          >
+            {canConfirm ? '確認' : `請等待 ${countdown} 秒`}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+```
+
+#### 鍵盤快捷鍵支持
+```typescript
+const keyboardShortcuts = {
+  // 編輯相關
+  'Enter': () => startEditingCurrentTask(),
+  'F2': () => startEditingCurrentTask(),
+  'Escape': () => cancelEditing(),
+  'Ctrl+S': () => saveCurrentEdit(),
+  'Ctrl+Z': () => undoLastEdit(),
+  'Ctrl+Y': () => redoLastEdit(),
+
+  // 刪除相關
+  'Delete': () => deleteSelectedTasks(),
+  'Ctrl+Delete': () => permanentDeleteSelectedTasks(),
+  'Shift+Delete': () => skipConfirmationDelete(),
+
+  // 批量操作
+  'Ctrl+A': () => selectAllTasks(),
+  'Ctrl+D': () => deselectAllTasks(),
+  'Ctrl+X': () => cutSelectedTasks(),
+  'Ctrl+V': () => pasteTasks()
+};
+```
+
+## 實現步驟
+
+### 第一階段：基礎編輯功能（3 小時）
+1. 實現內聯編輯組件
+2. 開發編輯模式切換
+3. 整合表單驗證
+4. 實現自動保存功能
+5. 添加編輯狀態指示
+
+### 第二階段：刪除功能（2 小時）
+1. 實現確認對話框
+2. 開發批量刪除功能
+3. 實現軟刪除機制
+4. 添加回收站功能
+5. 實現刪除歷史記錄
+
+### 第三階段：高級功能（2 小時）
+1. 實現編輯歷史和撤銷
+2. 添加鍵盤快捷鍵
+3. 優化觸摸設備體驗
+4. 實現無障礙訪問
+5. 性能優化
+
+## 依賴關係
+
+- **任務 001**: 項目基礎架構設置
+- **任務 002**: 數據庫架構設計
+- **任務 003**: 前端組件架構
+- **任務 004**: Task CRUD Operations - 提供基礎 CRUD 功能
+- **任務 005**: Task Status Management - 提供狀態管理基礎
+
+## 技術挑戰與解決方案
+
+### 挑戰 1: 衝突處理
+**問題**: 多用戶同時編輯同一任務的衝突
+**解決方案**:
+- 實施樂觀鎖定機制
+- 使用 WebSocket 實時同步
+- 提供衝突解決 UI
+
+### 挑戰 2: 性能優化
+**問題**: 大量任務的編輯性能問題
+**解決方案**:
+- 實施虛擬滾動
+- 使用防抖和節流技術
+- 優化 DOM 操作
+
+### 挑戰 3: 數據安全
+**問題**: 誤刪除和數據丟失風險
+**解決方案**:
+- 實施軟刪除機制
+- 提供回收站功能
+- 添加操作確認和歷史記錄
+
+## 測試策略
+
+### 單元測試
+```typescript
+describe('InlineEditor', () => {
+  test('should enter edit mode on click');
+  test('should save changes on blur');
+  test('should cancel edit on escape');
+  test('should handle save errors');
+});
+
+describe('ConfirmDialog', () => {
+  test('should show countdown for dangerous actions');
+  test('should prevent confirmation during countdown');
+  test('should call onConfirm when allowed');
+});
+```
+
+### 集成測試
+```typescript
+describe('Task Editing Integration', () => {
+  test('should sync edit changes with backend');
+  test('should handle edit conflicts');
+  test('should maintain edit state during navigation');
+});
+```
+
+### E2E 測試
+```typescript
+describe('Task Editing & Deletion E2E', () => {
+  test('should edit task inline and save');
+  test('should delete task with confirmation');
+  test('should batch delete multiple tasks');
+  test('should restore deleted tasks from recycle bin');
+});
+```
+
+## 性能指標
+
+### 響應時間
+- 編輯模式切換: < 50ms
+- 自動保存響應: < 200ms
+- 刪除操作響應: < 300ms
+
+### 用戶體驗
+- 編輯流暢度: > 60fps
+- 觸摸響應時間: < 100ms
+- 鍵盤響應時間: < 16ms
+
+## 完成定義
+
+任務完成時必須滿足以下條件：
+
+1. **功能完整性**
+   - 所有編輯功能正常工作
+   - 刪除功能安全可靠
+   - 確認機制有效
+
+2. **用戶體驗**
+   - 交互直觀友好
+   - 錯誤處理完善
+   - 響應式設計支持
+
+3. **安全性**
+   - 數據不會意外丟失
+   - 權限控制正確
+   - 操作可追蹤
+
+4. **代碼品質**
+   - 測試覆蓋率 > 85%
+   - 代碼審查通過
+   - 文檔完整
+
+## 驗證方法
+
+### 自動化測試
+```bash
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:accessibility
+```
+
+### 手動測試清單
+- [ ] 內聯編輯任務標題
+- [ ] 編輯任務描述
+- [ ] 自動保存功能測試
+- [ ] 刪除單個任務
+- [ ] 批量刪除任務
+- [ ] 回收站恢復功能
+- [ ] 鍵盤快捷鍵操作
+- [ ] 觸摸設備操作
+
+---
+
+*創建時間: 2025-10-23*
+*最後更新: 2025-10-23*

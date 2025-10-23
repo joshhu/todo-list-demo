@@ -1,0 +1,221 @@
+---
+type: task
+id: 004
+title: Task CRUD Operations
+epic: todo-list
+status: pending
+priority: high
+assignee: ""
+labels: ["backend", "frontend", "crud"]
+created_at: 2025-10-23
+updated_at: 2025-10-23
+estimated_hours: 8
+actual_hours: 0
+story_points: 5
+dependencies: ["001", "002", "003"]
+blockers: []
+related_tasks: ["005", "006"]
+---
+
+## 任務描述
+
+實現任務（Task）的創建、讀取、更新、刪除（CRUD）基本操作。這個任務將建立完整的數據流，從前端 UI 組件到後端數據存儲，確保用戶能夠管理他們的待辦事項。
+
+## 驗收標準
+
+### 功能需求
+- [ ] 用戶能夠創建新的待辦事項
+- [ ] 用戶能夠查看所有待辦事項列表
+- [ ] 用戶能夠讀取單個待辦事項的詳細信息
+- [ ] 用戶能夠更新待辦事項的基本信息
+- [ ] 用戶能夠刪除待辦事項
+- [ ] 所有操作都能即時反映在 UI 上
+- [ ] 數據能夠持久化存儲
+
+### 技術需求
+- [ ] 前端與後端 API 完整整合
+- [ ] 錯誤處理機制完善
+- [ ] 加載狀態指示器
+- [ ] 響應式設計支持
+- [ ] 數據驗證和類型安全
+
+### 性能需求
+- [ ] 操作響應時間 < 200ms
+- [ ] 支持至少 1000 個任務的流暢操作
+- [ ] 列表加載時間 < 500ms
+
+## 技術實現細節
+
+### 後端實現
+
+#### API 端點設計
+```typescript
+// 任務相關 API 端點
+POST   /api/tasks              // 創建任務
+GET    /api/tasks              // 獲取任務列表
+GET    /api/tasks/:id          // 獲取單個任務
+PUT    /api/tasks/:id          // 更新任務
+DELETE /api/tasks/:id          // 刪除任務
+```
+
+#### 數據模型
+```typescript
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+}
+```
+
+#### 服務層結構
+- `TaskService`: 處理任務業務邏輯
+- `TaskRepository`: 數據存取層
+- `TaskController`: API 請求處理
+- 輸入驗證中間件
+- 錯誤處理中間件
+
+### 前端實現
+
+#### 組件架構
+```
+components/
+├── TaskList.tsx          // 任務列表主組件
+├── TaskItem.tsx          // 單個任務項組件
+├── TaskForm.tsx          // 任務創建/編輯表單
+├── TaskCard.tsx          // 任務卡片展示
+└── TaskActions.tsx       // 任務操作按鈕
+```
+
+#### 狀態管理
+```typescript
+// Redux/Zustand 狀態結構
+interface TaskState {
+  tasks: Task[];
+  loading: boolean;
+  error: string | null;
+  selectedTask: Task | null;
+}
+```
+
+#### API 客戶端
+- HTTP 客戶端封裝
+- 請求/響應攔截器
+- 自動重試機制
+- 緩存策略
+
+### 數據庫設計
+
+#### Task 表結構
+```sql
+CREATE TABLE tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  completed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id UUID NOT NULL REFERENCES users(id),
+  INDEX idx_user_id (user_id),
+  INDEX idx_created_at (created_at),
+  INDEX idx_completed (completed)
+);
+```
+
+## 實現步驟
+
+### 第一階段：後端 API 開發（4 小時）
+1. 設計並實現 Task 數據模型
+2. 創建 TaskRepository 數據存取層
+3. 實現 TaskService 業務邏輯層
+4. 開發 RESTful API 端點
+5. 添加輸入驗證和錯誤處理
+6. 編寫單元測試和集成測試
+
+### 第二階段：前端組件開發（3 小時）
+1. 創建任務相關 React 組件
+2. 實現狀態管理邏輯
+3. 開發 API 客戶端
+4. 整合前後端數據流
+5. 添加加載狀態和錯誤處理
+
+### 第三階段：整合與測試（1 小時）
+1. 端到端功能測試
+2. UI/UX 優化
+3. 性能優化
+4. 錯誤場景測試
+
+## 依賴關係
+
+- **任務 001**: 項目基礎架構設置
+- **任務 002**: 數據庫架構設計
+- **任務 003**: 前端組件架構
+
+這些依賴必須在開始此任務之前完成。
+
+## 風險與挑戰
+
+### 技術風險
+- 數據庫性能優化挑戰
+- 前後端數據同步一致性
+- 錯誤狀態的優雅處理
+
+### 解決方案
+- 實施數據庫索引優化
+- 使用樂觀鎖定機制
+- 建立完善的錯誤處理流程
+
+## 完成定義
+
+任務完成時必須滿足以下條件：
+
+1. **功能完整性**
+   - 所有 CRUD 操作正常工作
+   - 前後端完全整合
+   - 數據持久化正常
+
+2. **代碼品質**
+   - 代碼覆蓋率 > 80%
+   - 通過所有自動化測試
+   - 代碼審查通過
+
+3. **用戶體驗**
+   - 操作流暢無延遲
+   - 錯誤訊息清晰友好
+   - 視覺回饋及時準確
+
+4. **文檔完整性**
+   - API 文檔更新完成
+   - 組件文檔齊全
+   - 使用範例提供
+
+## 驗證方法
+
+### 自動化測試
+```bash
+# 執行測試套件
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+```
+
+### 手動測試清單
+- [ ] 創建 10 個不同類型的任務
+- [ ] 編輯任務標題和描述
+- [ ] 刪除任務並確認移除
+- [ ] 刷新頁面後數據保持一致
+- [ ] 網路錯誤時的優雅降級
+
+## 後續工作
+
+此任務完成後，將為以下任務奠定基礎：
+- **任務 005**: Task Status Management - 基於 CRUD 操作實現狀態管理
+- **任務 006**: Task Editing & Deletion - 基於基礎編輯功能實現高級編輯特性
+
+---
+
+*創建時間: 2025-10-23*
+*最後更新: 2025-10-23*
