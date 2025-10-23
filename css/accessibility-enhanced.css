@@ -1,0 +1,763 @@
+/* 增強無障礙設計樣式 */
+/*
+ * 這個文件包含增強的無障礙設計功能，包括：
+ * - 完整的ARIA標籤支援
+ * - 鍵盤導航增強
+ * - 螢幕閱讀器優化
+ * - 高對比度模式
+ * - 語音輸入支援
+ */
+
+/* ========== ARIA 標籤增強 ========== */
+
+/* 通用 ARIA 屬性增強 */
+[role="button"] {
+  cursor: pointer;
+}
+
+[role="link"] {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+[role="navigation"] ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+[role="main"] {
+  outline: none;
+}
+
+[role="search"] {
+  max-width: 100%;
+}
+
+/* 狀態指示器 */
+[aria-busy="true"] {
+  position: relative;
+}
+
+[aria-busy="true"]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--color-primary-500);
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+[aria-expanded="true"] {
+  /* 展開狀態的視覺指示 */
+}
+
+[aria-expanded="false"] {
+  /* 關閉狀態的視覺指示 */
+}
+
+[aria-selected="true"] {
+  background: var(--color-primary-100);
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-700);
+}
+
+[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* 錯誤狀態 */
+[aria-invalid="true"] {
+  border-color: var(--color-error-500);
+  background: var(--color-error-50);
+}
+
+[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* ========== 鍵盤導航增強 ========== */
+
+/* 跳過連結 */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--color-primary-600);
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: var(--font-weight-medium);
+  z-index: var(--z-index-modal);
+  transition: top var(--duration-200) var(--ease-out);
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* 焦點指示器增強 */
+.focusable:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+/* 高對比度模式下的焦點 */
+@media (prefers-contrast: high) {
+  .focusable:focus {
+    outline-width: 3px;
+    outline-color: var(--color-text-primary);
+    outline-offset: 3px;
+  }
+}
+
+/* 鍵盤導航提示 */
+.keyboard-navigation-hint {
+  position: fixed;
+  bottom: var(--spacing-4);
+  left: var(--spacing-4);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  z-index: var(--z-index-modal);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all var(--duration-300) var(--ease-out);
+  pointer-events: none;
+}
+
+.keyboard-navigation-hint.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 焦點陷阱 */
+.focus-trap {
+  position: relative;
+}
+
+.focus-trap::before,
+.focus-trap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-index-modal);
+}
+
+.focus-trap::before {
+  background: transparent;
+}
+
+.focus-trap.active::before {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ========== 螢幕閱讀器優化 ========== */
+
+/* 螢幕閱讀器專用內容 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* 狀態公告區域 */
+.status-announcement {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* 螢幕閱讀器標題 */
+.screen-reader-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-4);
+}
+
+/* 描述文字增強 */
+.aria-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-2);
+}
+
+/* ========== 語音輸入支援 ========== */
+
+/* 語音輸入指示器 */
+.voice-input-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-info-100);
+  color: var(--color-info-700);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.voice-input-indicator::before {
+  content: '🎤';
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.voice-input-listening {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
+}
+
+.voice-input-processing {
+  background: var(--color-warning-100);
+  color: var(--color-warning-700);
+}
+
+/* ========== 高對比度模式 ========== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --border-width-1: 2px;
+    --border-width-2: 3px;
+    --focus-ring-width: 3px;
+    --focus-ring-color: var(--color-text-primary);
+  }
+
+  /* 所有交互元素都有更粗的邊框 */
+  .btn,
+  .form-input,
+  .form-textarea,
+  .form-select,
+  .task-item {
+    border-width: 2px;
+  }
+
+  /* 更強烈的焦點指示器 */
+  .focusable:focus {
+    outline-width: 3px;
+    outline-color: var(--color-text-primary);
+    outline-offset: 3px;
+  }
+
+  /* 鏈接增強 */
+  a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  /* 按鈕文字對比度增強 */
+  .btn {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* 表單控件增強 */
+  .form-input,
+  .form-textarea,
+  .form-select {
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+/* ========== 減少動畫偏好 ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* 禁用所有動畫 */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* 保留必要的功能動畫 */
+  .loading-spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  /* 懸停效果簡化 */
+  .btn:hover,
+  .task-item:hover,
+  .filter-btn:hover {
+    transform: none;
+  }
+}
+
+/* ========== 色彩無障礙 ========== */
+
+/* 確保文字對比度符合 WCAG AA 標準 */
+.text-high-contrast {
+  color: var(--color-text-primary);
+  background: var(--color-background);
+}
+
+/* 重要操作的顏色增強 */
+.important-action {
+  color: var(--color-error-600);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* 成功狀態的顏色增強 */
+.success-state {
+  color: var(--color-success-600);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 警告狀態的顏色增強 */
+.warning-state {
+  color: var(--color-warning-600);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ========== 觸控無障礙 ========== */
+
+/* 確保觸控目標足夠大 */
+.touch-target-large {
+  min-height: 48px;
+  min-width: 48px;
+  padding: var(--spacing-3);
+}
+
+/* 觸控回饋增強 */
+.touch-feedback {
+  position: relative;
+}
+
+.touch-feedback::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(0);
+  animation: touchFeedback 0.3s ease-out;
+}
+
+@keyframes touchFeedback {
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* ========== 語音導航支援 ========== */
+
+/* 語音命令指示器 */
+.voice-command-indicator {
+  position: fixed;
+  top: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-success-500);
+  color: white;
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-medium);
+  z-index: var(--z-index-modal);
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+  transition: all var(--duration-300) var(--ease-out);
+}
+
+.voice-command-indicator.active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ========== 擴展輔助 ========== */
+
+/* 放大鏡功能 */
+.magnifier {
+  position: fixed;
+  width: 150px;
+  height: 150px;
+  border: 3px solid var(--color-primary-500);
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: var(--z-index-modal);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: none;
+}
+
+.magnifier.active {
+  display: block;
+}
+
+.magnifier-content {
+  transform: scale(2);
+  transform-origin: center;
+}
+
+/* 文字大小調整增強 */
+.text-resize-controls {
+  position: fixed;
+  bottom: var(--spacing-4);
+  right: var(--spacing-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-index-fixed);
+}
+
+.text-resize-controls button {
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2) var(--spacing-3);
+  margin: 0 var(--spacing-1);
+  cursor: pointer;
+}
+
+.text-resize-controls button:hover {
+  background: var(--color-gray-200);
+}
+
+/* ========== 自定義屬性增強 ========== */
+
+/* 為輔助技術提供額外資訊 */
+[data-accessibility-help] {
+  position: relative;
+}
+
+[data-accessibility-help]::before {
+  content: attr(data-accessibility-help);
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* 語音標籤 */
+[data-speak] {
+  speak: normal;
+}
+
+[data-speak="never"] {
+  speak: never;
+}
+
+/* ========== 錯誤處理增強 ========== */
+
+/* 錯誤訊息無障礙 */
+.error-message {
+  background: var(--color-error-50);
+  border: 2px solid var(--color-error-300);
+  color: var(--color-error-700);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-2);
+  font-weight: var(--font-weight-medium);
+}
+
+.error-message[role="alert"] {
+  animation: errorSlideIn 0.3s ease-out;
+}
+
+@keyframes errorSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 成功訊息無障礙 */
+.success-message {
+  background: var(--color-success-50);
+  border: 2px solid var(--color-success-300);
+  color: var(--color-success-700);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-2);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ========== 表單無障礙增強 ========== */
+
+/* 表單標籤關聯 */
+.form-group {
+  margin-bottom: var(--spacing-4);
+}
+
+.form-label {
+  display: block;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-2);
+  color: var(--color-text-primary);
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: var(--color-error-500);
+}
+
+/* 表單幫助文字 */
+.form-help {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-1);
+}
+
+/* 表單錯誤訊息 */
+.form-error {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-error-600);
+  margin-top: var(--spacing-1);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 表單成功訊息 */
+.form-success {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-success-600);
+  margin-top: var(--spacing-1);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ========== 導航無障礙 ========== */
+
+/* 麵包屑導航 */
+.breadcrumb {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.breadcrumb li {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.breadcrumb li:not(:last-child)::after {
+  content: '/';
+  color: var(--color-text-muted);
+}
+
+.breadcrumb a {
+  color: var(--color-primary-600);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover,
+.breadcrumb a:focus {
+  text-decoration: underline;
+}
+
+.breadcrumb li:last-child {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 分頁無障礙 */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  justify-content: center;
+  margin: var(--spacing-6) 0;
+}
+
+.pagination [aria-current="page"] {
+  background: var(--color-primary-500);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== 表格無障礙 ========== */
+
+.table-container {
+  overflow-x: auto;
+  margin-bottom: var(--spacing-4);
+}
+
+.accessible-table {
+  width: 100%;
+  border-collapse: collapse;
+  caption-side: bottom;
+}
+
+.accessible-table caption {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: left;
+  margin-top: var(--spacing-2);
+  font-style: italic;
+}
+
+.accessible-table th,
+.accessible-table td {
+  padding: var(--spacing-3);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.accessible-table th {
+  background: var(--color-gray-50);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.accessible-table tr:hover {
+  background: var(--color-gray-50);
+}
+
+/* ========== 媒體無障礙 ========== */
+
+/* 圖片替代文字 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+img[alt=""] {
+  background: var(--color-error-100);
+  border: 2px dashed var(--color-error-300);
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-error-600);
+  font-size: var(--font-size-sm);
+}
+
+img[alt=""]::before {
+  content: '缺少替代文字';
+}
+
+/* 視頻無障礙 */
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 比例 */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-container video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 音頻控制 */
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+}
+
+/* ========== 列印無障礙 ========== */
+
+@media print {
+  /* 隱藏不必要的元素 */
+  .skip-link,
+  .navigation,
+  .sidebar,
+  .footer,
+  .btn,
+  .interactive-element {
+    display: none !important;
+  }
+
+  /* 確保文字可讀性 */
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+  }
+
+  /* 連結樣式 */
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  /* 表格樣式 */
+  table {
+    border: 1px solid #000;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    border: 1px solid #000;
+    padding: 8px;
+  }
+
+  /* 標題樣式 */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    color: #000;
+  }
+
+  /* 避免分頁斷裂 */
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+}

@@ -1,0 +1,481 @@
+/* 響應式設計優化 */
+/*
+ * 這個文件包含增強的響應式設計功能，
+ * 針對多設備適配、觸控友善、流體佈局等進行優化。
+ */
+
+/* ========== 流體佈局系統 ========== */
+
+/* 使用 CSS Grid 實現自適應佈局 */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-6);
+  align-items: start;
+}
+
+/* 平板尺寸：側邊欄和主內容並排 */
+@media (min-width: 768px) {
+  .main-grid {
+    grid-template-columns: var(--sidebar-width-md) 1fr;
+    gap: var(--spacing-8);
+  }
+}
+
+/* 桌面尺寸：更寬的側邊欄 */
+@media (min-width: 1024px) {
+  .main-grid {
+    grid-template-columns: var(--sidebar-width-lg) 1fr;
+    max-width: var(--container-2xl);
+    margin: 0 auto;
+  }
+}
+
+/* 大桌面尺寸：限制最大寬度 */
+@media (min-width: 1536px) {
+  .main-grid {
+    max-width: var(--container-2xl);
+    padding: 0 var(--spacing-8);
+  }
+}
+
+/* ========== 側邊欄響應式設計 ========== */
+
+.sidebar {
+  width: 100%;
+  order: 2;
+}
+
+/* 平板設備上，側邊欄在左側 */
+@media (min-width: 768px) {
+  .sidebar {
+    order: 1;
+    position: sticky;
+    top: calc(var(--spacing-4) + 80px); /* 標題高度 + 邊距 */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding-bottom: var(--spacing-8);
+  }
+}
+
+/* 手機設備上，側邊欄在底部 */
+.task-list-section {
+  order: 1;
+}
+
+@media (min-width: 768px) {
+  .task-list-section {
+    order: 2;
+  }
+}
+
+/* ========== 觸控友善設計 ========== */
+
+/* 確保所有按鈕有足夠的觸控區域（最小 44px） */
+.btn,
+.task-item,
+.filter-btn,
+.view-btn,
+.close-btn,
+.modal-close {
+  min-height: 44px;
+  min-width: 44px;
+  position: relative;
+}
+
+/* 小按鈕的觸控區域擴展 */
+.btn-small {
+  min-height: 36px;
+  min-width: 36px;
+  padding: var(--spacing-2) var(--spacing-3);
+}
+
+/* 為小按鈕添加不可見的觸控區域 */
+.btn-small::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+}
+
+/* 任務項目的觸控優化 */
+.task-item {
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-2);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-base);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.task-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.task-item:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========== 響應式字體系統 ========== */
+
+/* 流體字體大小 */
+.app-title {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.section-title {
+  font-size: clamp(1.125rem, 3vw, 1.25rem);
+}
+
+.task-title {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  line-height: var(--line-height-relaxed);
+}
+
+.task-description {
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+  line-height: var(--line-height-normal);
+}
+
+/* 手機設備上的字體優化 */
+@media (max-width: 480px) {
+  .task-title {
+    font-size: var(--font-size-base); /* 確保最小 16px */
+  }
+
+  .task-description {
+    font-size: var(--font-size-sm); /* 確保最小 14px */
+  }
+
+  .form-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+/* ========== 響應式間距系統 ========== */
+
+/* 動態間距調整 */
+.container {
+  padding-left: clamp(1rem, 5vw, 2rem);
+  padding-right: clamp(1rem, 5vw, 2rem);
+}
+
+.app-header {
+  padding-top: clamp(1rem, 3vw, 1.5rem);
+  padding-bottom: clamp(1rem, 3vw, 1.5rem);
+}
+
+.task-item {
+  padding: clamp(0.75rem, 3vw, 1rem);
+}
+
+/* ========== 橫豎屏切換支援 ========== */
+
+/* 橫屏模式下的佈局調整 */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  .app-header {
+    padding-top: var(--spacing-2);
+    padding-bottom: var(--spacing-2);
+  }
+
+  .app-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .sidebar {
+    max-height: calc(100vh - 80px);
+  }
+
+  .task-item {
+    padding: var(--spacing-3);
+  }
+}
+
+/* 超寬屏支援 */
+@media screen and (min-width: 1920px) {
+  .main-grid {
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+}
+
+/* ========== 移動設備專門優化 ========== */
+
+/* 手機專用的導航優化 */
+@media (max-width: 767px) {
+  /* 側邊欄變為可摺疊的區域 */
+  .sidebar {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-lg);
+    margin: 0 -var(--spacing-4);
+    padding: var(--spacing-6);
+  }
+
+  /* 側邊欄標題可以點擊展開/收合 */
+  .section-title {
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition-base);
+  }
+
+  .section-title:hover {
+    color: var(--color-primary-600);
+  }
+
+  /* 篩選控制區域在小屏幕上的優化 */
+  .filter-controls {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--spacing-2);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-2);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .filter-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-btn {
+    flex-shrink: 0;
+    min-width: fit-content;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* 觸控設備上的手勢提示 */
+@media (hover: none) and (pointer: coarse) {
+  .task-item::after {
+    content: '向右滑動更多操作';
+    position: absolute;
+    right: var(--spacing-4);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    opacity: 0;
+    transition: var(--transition-opacity);
+  }
+
+  .task-item:hover::after {
+    opacity: 0.5;
+  }
+}
+
+/* ========== 高解析度屏幕優化 ========== */
+
+/* Retina 屏幕優化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .app-icon::before {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ========== 可訪問性增強 ========== */
+
+/* 高對比模式下的響應式調整 */
+@media (prefers-contrast: high) {
+  .task-item {
+    border: 2px solid var(--color-border);
+  }
+
+  .task-item:hover {
+    border-color: var(--color-primary-500);
+  }
+}
+
+/* 減少動畫偏好設定 */
+@media (prefers-reduced-motion: reduce) {
+  .main-grid,
+  .sidebar,
+  .task-list-section {
+    transition: none;
+  }
+
+  .task-item:hover {
+    transform: none;
+  }
+}
+
+/* ========== 印刷樣式 ========== */
+@media print {
+  .app-header,
+  .sidebar,
+  .app-footer {
+    display: none;
+  }
+
+  .task-list-section {
+    width: 100%;
+  }
+
+  .task-item {
+    break-inside: avoid;
+    border: 1px solid #ccc;
+    margin-bottom: var(--spacing-2);
+  }
+}
+
+/* ========== 性能優化 ========== */
+
+/* 為動畫元素添加 will-change */
+.task-item:hover {
+  will-change: transform, box-shadow;
+}
+
+/* 使用 contain 屬性優化重繪 */
+.sidebar {
+  contain: layout style paint;
+}
+
+.task-list-container {
+  contain: layout style;
+}
+
+/* ========== 響應式圖片和媒體 ========== */
+
+/* 圖片響應式 */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* 響應式嵌入內容 */
+embed,
+iframe,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ========== 特殊設備適配 ========== */
+
+/* iPad Pro 等超大平板 */
+@media only screen
+  and (min-device-width: 1024px)
+  and (max-device-width: 1366px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+  .main-grid {
+    grid-template-columns: 380px 1fr;
+  }
+}
+
+/* iPhone X 系列的安全區域 */
+@supports (padding: max(0px)) {
+  .app-header {
+    padding-top: max(var(--spacing-4), env(safe-area-inset-top));
+  }
+
+  .app-footer {
+    padding-bottom: max(var(--spacing-4), env(safe-area-inset-bottom));
+  }
+}
+
+/* ========== 載入和骨架屏優化 ========== */
+
+/* 響應式骨架屏 */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-task {
+  height: 80px;
+  margin-bottom: var(--spacing-3);
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 767px) {
+  .skeleton-task {
+    height: 70px;
+  }
+}
+
+/* ========== 錯誤狀態的響應式設計 ========== */
+
+.error-state {
+  padding: var(--spacing-8);
+  text-align: center;
+  border-radius: var(--radius-lg);
+  background: var(--color-error-50);
+  border: 1px solid var(--color-error-200);
+}
+
+@media (max-width: 767px) {
+  .error-state {
+    padding: var(--spacing-6);
+    margin: var(--spacing-4);
+  }
+}
+
+.error-state h3 {
+  font-size: var(--font-size-lg);
+  color: var(--color-error-700);
+  margin-bottom: var(--spacing-3);
+}
+
+.error-state p {
+  font-size: var(--font-size-sm);
+  color: var(--color-error-600);
+  margin-bottom: var(--spacing-4);
+}
+
+/* ========== 響應式表格和數據顯示 ========== */
+
+@media (max-width: 767px) {
+  /* 將表格轉換為卡片佈局 */
+  .data-table {
+    display: block;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tr {
+    margin-bottom: var(--spacing-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-4);
+  }
+
+  .data-table td {
+    border: none;
+    padding: var(--spacing-2) 0;
+  }
+
+  .data-table td::before {
+    content: attr(data-label) ": ";
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+}

@@ -1,0 +1,581 @@
+/* 性能優化樣式 */
+/*
+ * 這個文件包含性能優化相關的樣式，包括：
+ * - 懶加載和虛擬滾動
+ * - 資源載入優化
+ * - 動畫性能優化
+ * - 渲染優化
+ */
+
+/* ========== 懶加載樣式 ========== */
+
+/* 圖片懶加載 */
+.lazy-image {
+  opacity: 0;
+  transition: opacity var(--duration-300) var(--ease-out);
+}
+
+.lazy-image.loaded {
+  opacity: 1;
+}
+
+.lazy-image.loading {
+  background: var(--color-gray-100);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-gray-100) 25%,
+    var(--color-gray-200) 50%,
+    var(--color-gray-100) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+/* 內容懶加載 */
+.lazy-content {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all var(--duration-500) var(--ease-out);
+}
+
+.lazy-content.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 交集觀察器動畫 */
+.intersection-observer {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--duration-600) var(--ease-out);
+}
+
+.intersection-observer.intersecting {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 交錯動畫 */
+.stagger-animation > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s var(--ease-out) forwards;
+}
+
+.stagger-animation > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-animation > *:nth-child(2) { animation-delay: 100ms; }
+.stagger-animation > *:nth-child(3) { animation-delay: 200ms; }
+.stagger-animation > *:nth-child(4) { animation-delay: 300ms; }
+.stagger-animation > *:nth-child(5) { animation-delay: 400ms; }
+.stagger-animation > *:nth-child(6) { animation-delay: 500ms; }
+.stagger-animation > *:nth-child(7) { animation-delay: 600ms; }
+.stagger-animation > *:nth-child(8) { animation-delay: 700ms; }
+.stagger-animation > *:nth-child(9) { animation-delay: 800ms; }
+.stagger-animation > *:nth-child(10) { animation-delay: 900ms; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== 虛擬滾動 ========== */
+
+.virtual-scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-scroll-content {
+  position: relative;
+}
+
+.virtual-scroll-item {
+  position: absolute;
+  width: 100%;
+  will-change: transform;
+}
+
+/* 虛擬滾動佔位符 */
+.virtual-scroll-spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+/* ========== 資源載入優化 ========== */
+
+/* 關鍵CSS內聯 */
+.critical-css {
+  /* 關鍵樣式將被內聯到HTML中 */
+}
+
+/* 非關鍵CSS異步載入 */
+.non-critical-css {
+  display: none;
+}
+
+/* 字體載入優化 */
+@font-face {
+  font-family: 'Custom Font';
+  src: url('fonts/custom-font.woff2') format('woff2');
+  font-display: swap; /* 避免字體阻塞渲染 */
+}
+
+/* 字體載入狀態 */
+.font-loading {
+  visibility: hidden;
+}
+
+.font-loaded {
+  visibility: visible;
+}
+
+.font-fallback {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ========== 動畫性能優化 ========== */
+
+/* GPU加速 */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 動畫優化 */
+.animated-element {
+  will-change: transform, opacity;
+  contain: layout style paint;
+}
+
+/* 減少重繪和重排 */
+.optimized-rendering {
+  contain: strict;
+}
+
+/* 滾動性能優化 */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-container {
+  overflow: auto;
+  will-change: scroll-position;
+  contain: layout style paint;
+}
+
+/* ========== 圖片優化 ========== */
+
+/* 響應式圖片 */
+.responsive-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  font-family: 'object-fit: cover;'; /* 對不支持object-fit的瀏覽器的回退 */
+}
+
+/* 圖片載入優化 */
+.optimized-image {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 200px;
+}
+
+/* 圖片預載入 */
+.preload-image {
+  display: none;
+}
+
+/* ========== 載入狀態優化 ========== */
+
+/* 骨架屏 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+  height: 1em;
+  margin-bottom: 0.5em;
+}
+
+.skeleton-text.large {
+  height: 1.5em;
+}
+
+.skeleton-text.small {
+  height: 0.8em;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-button {
+  height: 40px;
+  width: 120px;
+  border-radius: var(--radius-md);
+}
+
+/* 載入指示器 */
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-gray-300);
+  border-top: 2px solid var(--color-primary-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== 記憶體優化 ========== */
+
+/* 元素回收 */
+.recyclable-element {
+  /* 標記可回收的元素 */
+}
+
+/* 虛擬化長列表 */
+.virtual-list {
+  height: 400px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.virtual-list-viewport {
+  height: 100%;
+  overflow: hidden;
+}
+
+.virtual-list-content {
+  position: relative;
+}
+
+/* ========== 快取優化 ========== */
+
+/* CSS快取 */
+.cache-optimized {
+  /* 使用穩定的類名和選擇器 */
+}
+
+/* 資源快取提示 */
+.cache-hint {
+  contain: layout style paint;
+  will-change: contents;
+}
+
+/* ========== 批次更新 ========== */
+
+/* 批次更新容器 */
+.batch-update-container {
+  /* 標記需要批次更新的容器 */
+}
+
+/* 更新過渡 */
+.update-transition {
+  transition: all var(--duration-200) var(--ease-out);
+}
+
+/* ========== 首次載入優化 ========== */
+
+/* 關鍵內容 */
+.above-the-fold {
+  /* 首屏關鍵內容 */
+  contain: layout style paint;
+}
+
+/* 非關鍵內容 */
+.below-the-fold {
+  /* 非首屏內容，可以延遲載入 */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* ========== 渲染優化 ========== */
+
+/* 隱藏未使用的元素 */
+.hidden-until-needed {
+  display: none;
+  visibility: hidden;
+}
+
+/* 條件渲染 */
+.conditional-render {
+  /* 根據條件渲染的元素 */
+}
+
+/* 優化的動畫 */
+.optimized-animation {
+  animation: optimizedFadeIn 0.3s var(--ease-out);
+  will-change: opacity;
+}
+
+@keyframes optimizedFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ========== 響應式性能優化 ========== */
+
+/* 媒體查詢優化 */
+@media (max-width: 768px) {
+  /* 移動設備上禁用某些動畫 */
+  .performance-heavy {
+    animation: none;
+  }
+
+  /* 簡化移動設備上的效果 */
+  .complex-effect {
+    transform: none;
+  }
+}
+
+/* 高DPI設備優化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .high-dpi-optimized {
+    /* 高解析度設備優化 */
+  }
+}
+
+/* ========== 錯誤處理優化 ========== */
+
+/* 載入失敗回退 */
+.load-error {
+  background: var(--color-error-50);
+  border: 1px solid var(--color-error-200);
+  color: var(--color-error-700);
+  padding: var(--spacing-4);
+  text-align: center;
+  border-radius: var(--radius-md);
+}
+
+.load-error-icon {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-2);
+}
+
+/* 重試按鈕 */
+.retry-button {
+  background: var(--color-primary-500);
+  color: white;
+  border: none;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-top: var(--spacing-3);
+}
+
+.retry-button:hover {
+  background: var(--color-primary-600);
+}
+
+/* ========== 網路優化 ========== */
+
+/* 離線指示器 */
+.offline-indicator {
+  position: fixed;
+  bottom: var(--spacing-4);
+  left: var(--spacing-4);
+  background: var(--color-warning-500);
+  color: white;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  z-index: var(--z-index-modal);
+  animation: slideInUp 0.3s var(--ease-out);
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 網路狀態監控 */
+.network-status {
+  position: fixed;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  z-index: var(--z-index-fixed);
+  transition: all var(--duration-200) var(--ease-out);
+}
+
+.network-status.online {
+  background: var(--color-success-500);
+  color: white;
+}
+
+.network-status.offline {
+  background: var(--color-error-500);
+  color: white;
+}
+
+.network-status.slow {
+  background: var(--color-warning-500);
+  color: white;
+}
+
+/* ========== 數據優化 ========== */
+
+/* 大數據集處理 */
+.large-dataset {
+  /* 大量數據的優化樣式 */
+}
+
+/* 數據虛擬化 */
+.data-virtualized {
+  contain: strict;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100px;
+}
+
+/* 無限滾動 */
+.infinite-scroll {
+  position: relative;
+}
+
+.infinite-scroll-loader {
+  padding: var(--spacing-4);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* ========== 性能監控 ========== */
+
+/* 性能指標指示器 */
+.performance-indicator {
+  position: fixed;
+  bottom: var(--spacing-4);
+  right: var(--spacing-4);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  z-index: var(--z-index-tooltip);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-200) var(--ease-out);
+}
+
+.performance-indicator.visible {
+  opacity: 1;
+}
+
+/* 調試模式下的性能信息 */
+.debug-performance {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: var(--spacing-6);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  z-index: var(--z-index-modal);
+  max-width: 500px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ========== 減少動畫優化 ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  .lazy-content,
+  .intersection-observer,
+  .stagger-animation > * {
+    transition: none;
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--color-gray-200);
+  }
+
+  .loading-spinner {
+    animation: none;
+    border-top-color: var(--color-primary-500);
+  }
+}
+
+/* ========== 低端設備優化 ========== */
+
+/* 檢測低端設備 */
+.low-end-device .performance-heavy {
+  display: none;
+}
+
+.low-end-device .complex-animation {
+  animation: none;
+  transition: none;
+}
+
+/* ========== 記憶體警告 ========== */
+
+/* 當記憶體不足時的優化 */
+.memory-pressure .expensive-operation {
+  display: none;
+}
+
+.memory-pressure .animation-heavy {
+  animation: none;
+}
+
+/* ========== 批次DOM操作 ========== */
+
+/* 批次更新容器 */
+.batch-container {
+  /* 使用documentFragment進行批次操作 */
+}
+
+/* 延遲渲染 */
+.deferred-render {
+  contain: strict;
+  content-visibility: auto;
+}

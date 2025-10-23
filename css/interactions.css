@@ -1,0 +1,667 @@
+/* 交互細節優化 */
+/*
+ * 這個文件包含交互細節的優化，包括：
+ * - 按鈕點擊回饋
+ * - 手勢操作支援
+ * - 懸停和焦點狀態
+ * - 觸控回饋
+ * - 微交互效果
+ */
+
+/* ========== 按鈕增強回饋 ========== */
+
+/* 基礎按鈕增強 */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0); /* 啟用硬件加速 */
+  transition: all var(--duration-150) var(--ease-out);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 按鈕懸停狀態 */
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--duration-75);
+}
+
+/* 按鈕聚焦狀態 */
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+}
+
+/* 按鈕禁用狀態 */
+.btn:disabled,
+.btn.disabled {
+  opacity: var(--disabled-opacity);
+  cursor: var(--disabled-cursor);
+  transform: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* 按鈕漣漪效果 */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+  z-index: 1;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+  transition: width 0.3s, height 0.3s, opacity 0.3s;
+}
+
+/* 主要按鈕特殊效果 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::after {
+  left: 100%;
+}
+
+/* 危險按鈕 */
+.btn-danger {
+  background: linear-gradient(135deg, var(--color-error-500), var(--color-error-600));
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, var(--color-error-600), var(--color-error-700));
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* 成功按鈕 */
+.btn-success {
+  background: linear-gradient(135deg, var(--color-success-500), var(--color-success-600));
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, var(--color-success-600), var(--color-success-700));
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* ========== 輸入框交互增強 ========== */
+
+.form-input,
+.form-textarea,
+.form-select {
+  transition: all var(--duration-200) var(--ease-out);
+  position: relative;
+}
+
+/* 輸入框聚焦效果 */
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: var(--color-primary-500);
+}
+
+/* 輸入框懸停效果 */
+.form-input:hover,
+.form-textarea:hover,
+.form-select:hover {
+  border-color: var(--color-gray-400);
+}
+
+/* 輸入框錯誤狀態 */
+.form-input.error,
+.form-textarea.error {
+  border-color: var(--color-error-500);
+  animation: shake 0.5s ease-in-out;
+}
+
+.form-input.error:focus,
+.form-textarea.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* 輸入框成功狀態 */
+.form-input.success,
+.form-textarea.success {
+  border-color: var(--color-success-500);
+  animation: pulse 0.3s ease-in-out;
+}
+
+.form-input.success:focus,
+.form-textarea.success:focus {
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+/* ========== 任務項目交互增強 ========== */
+
+.task-item {
+  transition: all var(--duration-200) var(--ease-out);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 任務項目懸停效果 */
+.task-item:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  background: var(--color-gray-50);
+}
+
+.task-item:active {
+  transform: translateY(0) scale(1);
+  transition-duration: var(--duration-75);
+}
+
+/* 任務項目選中狀態 */
+.task-item.selected {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-300);
+  transform: scale(1.02);
+}
+
+.task-item.selected::before {
+  content: '✓';
+  position: absolute;
+  top: var(--spacing-3);
+  left: var(--spacing-3);
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-bold);
+  animation: checkmark 0.3s var(--ease-out);
+}
+
+/* 任務項目拖曳狀態 */
+.task-item.dragging {
+  opacity: 0.8;
+  transform: rotate(3deg) scale(1.05);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  z-index: var(--z-index-modal);
+  cursor: grabbing;
+}
+
+.task-item.drag-over {
+  background: var(--color-primary-100);
+  border: 2px dashed var(--color-primary-400);
+  transform: scale(1.02);
+}
+
+/* ========== 手勢操作支援 ========== */
+
+/* 觸控設備上的手勢提示 */
+@media (hover: none) and (pointer: coarse) {
+  .task-item::after {
+    content: '滑動查看操作';
+    position: absolute;
+    right: var(--spacing-4);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    opacity: 0;
+    transition: all var(--duration-300) var(--ease-out);
+    pointer-events: none;
+  }
+
+  .task-item:hover::after {
+    opacity: 0.7;
+    transform: translateY(-50%) translateX(-5px);
+  }
+}
+
+/* 滑動操作區域 */
+.task-item .swipe-actions {
+  position: absolute;
+  top: 0;
+  right: -100%;
+  width: 100px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: linear-gradient(to right, transparent, var(--color-error-500));
+  transition: right var(--duration-200) var(--ease-out);
+}
+
+.task-item.swiped .swipe-actions {
+  right: 0;
+}
+
+.task-item .swipe-action {
+  background: var(--color-error-500);
+  color: white;
+  border: none;
+  padding: var(--spacing-3);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--duration-150) var(--ease-out);
+}
+
+.task-item .swipe-action:hover {
+  background: var(--color-error-600);
+}
+
+/* ========== 篩選按鈕交互增強 ========== */
+
+.filter-btn {
+  transition: all var(--duration-150) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-btn:hover {
+  transform: translateY(-1px);
+  background: var(--color-gray-100);
+}
+
+.filter-btn.active {
+  background: var(--color-primary-500);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.filter-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: white;
+  border-radius: 1px;
+  animation: slideIn 0.2s var(--ease-out);
+}
+
+/* ========== 視圖切換按鈕 ========== */
+
+.view-btn {
+  transition: all var(--duration-150) var(--ease-out);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+
+.view-btn:hover {
+  background: var(--color-gray-100);
+  transform: translateY(-1px);
+}
+
+.view-btn.active {
+  background: var(--color-primary-500);
+  color: white;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* ========== 搜索框交互增強 ========== */
+
+.search-container {
+  position: relative;
+}
+
+.search-input {
+  transition: all var(--duration-200) var(--ease-out);
+}
+
+.search-input:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.search-clear-btn {
+  transition: all var(--duration-150) var(--ease-out);
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+}
+
+.search-input:not(:placeholder-shown) ~ .search-clear-btn {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.search-clear-btn:hover {
+  background: var(--color-error-100);
+  color: var(--color-error-600);
+  transform: scale(1.1);
+}
+
+/* ========== 模態框交互增強 ========== */
+
+.modal-overlay {
+  backdrop-filter: blur(4px);
+  transition: all var(--duration-200) var(--ease-out);
+}
+
+.modal {
+  transition: all var(--duration-300) var(--ease-out);
+  animation: modalBounceIn 0.4s var(--ease-out);
+}
+
+@keyframes modalBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  50% {
+    transform: scale(1.02) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-close:hover {
+  background: var(--color-error-100);
+  color: var(--color-error-600);
+  transform: rotate(90deg);
+}
+
+/* ========== 通知交互增強 ========== */
+
+.notification {
+  transition: all var(--duration-300) var(--ease-out);
+  animation: notificationSlideIn 0.3s var(--ease-out);
+}
+
+@keyframes notificationSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification:hover {
+  transform: translateX(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.notification-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* ========== 進度條交互增強 ========== */
+
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.progress-bar:hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: progressShine 1.5s ease-in-out;
+}
+
+@keyframes progressShine {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ========== 工具提示增強 ========== */
+
+.tooltip {
+  transition: all var(--duration-200) var(--ease-out);
+  animation: tooltipFadeIn 0.2s var(--ease-out);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ========== 長按效果 ========== */
+
+.long-press {
+  transition: all var(--duration-300) var(--ease-out);
+}
+
+.long-press:active {
+  transform: scale(0.95);
+  transition-duration: var(--duration-75);
+}
+
+.long-press.pressing {
+  animation: longPress 1s ease-in-out;
+}
+
+@keyframes longPress {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+/* ========== 快捷鍵提示 ========== */
+
+.shortcut-hint {
+  opacity: 0;
+  transition: opacity var(--duration-200) var(--ease-out);
+  pointer-events: none;
+}
+
+.has-shortcut:focus .shortcut-hint,
+.has-shortcut:hover .shortcut-hint {
+  opacity: 1;
+}
+
+/* ========== 響應式交互調整 ========== */
+
+@media (max-width: 768px) {
+  /* 移動設備上減少一些動畫效果 */
+  .task-item:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn:hover {
+    transform: none;
+  }
+
+  .btn:active {
+    transform: scale(0.95);
+  }
+
+  /* 增大觸控目標 */
+  .btn,
+  .task-item,
+  .filter-btn,
+  .view-btn {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* ========== 高對比度模式 ========== */
+
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: 2px;
+  }
+
+  .btn:focus {
+    box-shadow: 0 0 0 3px var(--color-text-primary);
+  }
+
+  .task-item:hover {
+    border-width: 2px;
+  }
+}
+
+/* ========== 減少動畫偏好 ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .btn:hover,
+  .task-item:hover,
+  .filter-btn:hover {
+    transform: none;
+  }
+
+  .modal {
+    animation: none;
+  }
+
+  .notification {
+    animation: none;
+  }
+}
+
+/* ========== 觸控回饋增強 ========== */
+
+@media (pointer: coarse) {
+  /* 觸控設備上的按鈕回饋 */
+  .btn {
+    -webkit-tap-highlight-color: rgba(79, 70, 229, 0.3);
+  }
+
+  /* 觸控設備上的任務項目回饋 */
+  .task-item {
+    -webkit-tap-highlight-color: rgba(79, 70, 229, 0.1);
+  }
+
+  /* 增加觸控目標的大小 */
+  .close-btn,
+  .delete-btn,
+  .edit-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ========== 載入狀態交互 ========== */
+
+.loading-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.loading-skeleton:hover {
+  cursor: wait;
+}
+
+/* ========== 拖曳回饋 ========== */
+
+.draggable {
+  cursor: grab;
+  transition: all var(--duration-150) var(--ease-out);
+}
+
+.draggable:active {
+  cursor: grabbing;
+}
+
+.drag-handle {
+  cursor: grab;
+  opacity: 0.5;
+  transition: opacity var(--duration-150) var(--ease-out);
+}
+
+.task-item:hover .drag-handle {
+  opacity: 1;
+}
+
+/* ========== 鍵盤導航增強 ========== */
+
+.focusable {
+  position: relative;
+}
+
+.focusable:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+/* 為鍵盤導航用戶提供更好的視覺回饋 */
+.focusable.focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}

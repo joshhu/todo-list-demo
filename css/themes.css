@@ -1,0 +1,578 @@
+/* 主題和外觀定制系統 */
+/*
+ * 這個文件包含主題切換和定制功能，
+ * 支援深色/淺色主題、自定義顏色、高對比度模式等。
+ */
+
+/* ========== 主題變數定義 ========== */
+
+/* 淺色主題（預設） */
+:root {
+  /* 主題切換按鈕 */
+  --theme-toggle-bg: var(--color-gray-100);
+  --theme-toggle-border: var(--color-gray-300);
+  --theme-toggle-text: var(--color-gray-700);
+  --theme-toggle-hover: var(--color-gray-200);
+
+  /* 主題選擇器 */
+  --theme-selector-bg: var(--color-surface);
+  --theme-selector-border: var(--color-border);
+  --theme-selector-shadow: var(--shadow-lg);
+}
+
+/* 深色主題 */
+[data-theme="dark"] {
+  /* 覆蓋基礎色彩變數 */
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #0f172a;
+
+  /* 更新灰色系 */
+  --color-gray-50: #0f172a;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #334155;
+  --color-gray-300: #475569;
+  --color-gray-400: #64748b;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #f8fafc;
+
+  /* 更新狀態色彩以適應深色背景 */
+  --color-success-50: #022c22;
+  --color-success-100: #064e3b;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+
+  --color-warning-50: #451a03;
+  --color-warning-100: #78350f;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+
+  --color-error-50: #450a0a;
+  --color-error-100: #7f1d1d;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+
+  --color-info-50: #0c4a6e;
+  --color-info-100: #075985;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+
+  /* 更新主題切換按鈕顏色 */
+  --theme-toggle-bg: var(--color-gray-800);
+  --theme-toggle-border: var(--color-gray-600);
+  --theme-toggle-text: var(--color-gray-200);
+  --theme-toggle-hover: var(--color-gray-700);
+}
+
+/* 高對比度主題 */
+[data-theme="high-contrast"] {
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-border: #000000;
+  --color-text-primary: #000000;
+  --color-text-secondary: #000000;
+  --color-text-muted: #333333;
+  --color-text-inverse: #ffffff;
+
+  /* 使用更高對比度的狀態色彩 */
+  --color-success-500: #006600;
+  --color-warning-500: #cc6600;
+  --color-error-500: #cc0000;
+  --color-info-500: #0066cc;
+
+  /* 更粗的邊框 */
+  --border-width-1: 2px;
+  --border-width-2: 3px;
+
+  /* 更明顯的焦點環 */
+  --focus-ring-width: 3px;
+  --focus-ring-color: #000000;
+}
+
+/* 溫和主題 */
+[data-theme="warm"] {
+  --color-background: #fef7ed;
+  --color-surface: #fff7ed;
+  --color-border: #fed7aa;
+  --color-primary-500: #ea580c;
+  --color-primary-600: #c2410c;
+  --color-primary-700: #9a3412;
+}
+
+/* 冷色主題 */
+[data-theme="cool"] {
+  --color-background: #f0f9ff;
+  --color-surface: #f0f9ff;
+  --color-border: #bae6fd;
+  --color-primary-500: #0284c7;
+  --color-primary-600: #0369a1;
+  --color-primary-700: #075985;
+}
+
+/* ========== 主題切換按鈕 ========== */
+
+.theme-toggle {
+  position: fixed;
+  top: var(--spacing-6);
+  right: var(--spacing-6);
+  z-index: var(--z-index-fixed);
+  background: var(--theme-toggle-bg);
+  border: 1px solid var(--theme-toggle-border);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  box-shadow: var(--shadow-md);
+}
+
+.theme-toggle:hover {
+  background: var(--theme-toggle-hover);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-icon {
+  font-size: var(--font-size-lg);
+  color: var(--theme-toggle-text);
+  transition: all var(--transition-base);
+}
+
+/* 主題圖標動畫 */
+.theme-toggle .theme-icon {
+  animation: rotate 0.5s ease-in-out;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(180deg); }
+}
+
+/* ========== 主題選擇器面板 ========== */
+
+.theme-selector {
+  position: fixed;
+  top: 80px;
+  right: var(--spacing-6);
+  background: var(--theme-selector-bg);
+  border: 1px solid var(--theme-selector-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  box-shadow: var(--theme-selector-shadow);
+  z-index: var(--z-index-modal);
+  min-width: 200px;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+  pointer-events: none;
+  transition: all var(--duration-200) var(--ease-out);
+}
+
+.theme-selector.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.theme-selector-header {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.theme-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 1px solid transparent;
+}
+
+.theme-option:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-border);
+}
+
+.theme-option.active {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-200);
+  color: var(--color-primary-700);
+}
+
+.theme-option-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  margin-right: var(--spacing-3);
+  border: 1px solid var(--color-gray-300);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-option-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 50%;
+  background: var(--color-text-primary);
+}
+
+.theme-option-preview::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-background);
+}
+
+.theme-option-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* 主題預覽顏色 */
+.theme-option[data-theme="light"] .theme-option-preview {
+  background: #ffffff;
+}
+
+.theme-option[data-theme="light"] .theme-option-preview::before {
+  background: #1f2937;
+}
+
+.theme-option[data-theme="dark"] .theme-option-preview {
+  background: #0f172a;
+}
+
+.theme-option[data-theme="dark"] .theme-option-preview::before {
+  background: #f1f5f9;
+}
+
+.theme-option[data-theme="high-contrast"] .theme-option-preview {
+  background: #ffffff;
+  border: 2px solid #000000;
+}
+
+.theme-option[data-theme="high-contrast"] .theme-option-preview::before {
+  background: #000000;
+}
+
+.theme-option[data-theme="warm"] .theme-option-preview {
+  background: #fef7ed;
+}
+
+.theme-option[data-theme="warm"] .theme-option-preview::before {
+  background: #ea580c;
+}
+
+.theme-option[data-theme="cool"] .theme-option-preview {
+  background: #f0f9ff;
+}
+
+.theme-option[data-theme="cool"] .theme-option-preview::before {
+  background: #0284c7;
+}
+
+/* ========== 字體大小調整 ========== */
+
+.font-size-controls {
+  position: fixed;
+  bottom: var(--spacing-6);
+  right: var(--spacing-6);
+  background: var(--theme-selector-bg);
+  border: 1px solid var(--theme-selector-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  box-shadow: var(--theme-selector-shadow);
+  z-index: var(--z-index-fixed);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.font-size-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.font-size-buttons {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.font-size-btn {
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2) var(--spacing-3);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-text-secondary);
+}
+
+.font-size-btn:hover {
+  background: var(--color-gray-200);
+  color: var(--color-text-primary);
+}
+
+.font-size-btn:active {
+  transform: scale(0.95);
+}
+
+/* 字體大小類別 */
+[data-font-size="small"] {
+  --font-size-xs: 0.6875rem;  /* 11px */
+  --font-size-sm: 0.75rem;    /* 12px */
+  --font-size-base: 0.875rem; /* 14px */
+  --font-size-lg: 1rem;       /* 16px */
+  --font-size-xl: 1.125rem;   /* 18px */
+  --font-size-2xl: 1.25rem;   /* 20px */
+  --font-size-3xl: 1.5rem;    /* 24px */
+  --font-size-4xl: 1.875rem;  /* 30px */
+}
+
+[data-font-size="large"] {
+  --font-size-xs: 0.875rem;   /* 14px */
+  --font-size-sm: 1rem;       /* 16px */
+  --font-size-base: 1.125rem; /* 18px */
+  --font-size-lg: 1.25rem;    /* 20px */
+  --font-size-xl: 1.375rem;   /* 22px */
+  --font-size-2xl: 1.75rem;   /* 28px */
+  --font-size-3xl: 2.125rem;  /* 34px */
+  --font-size-4xl: 2.5rem;    /* 40px */
+}
+
+[data-font-size="extra-large"] {
+  --font-size-xs: 1rem;       /* 16px */
+  --font-size-sm: 1.125rem;   /* 18px */
+  --font-size-base: 1.25rem;  /* 20px */
+  --font-size-lg: 1.375rem;   /* 22px */
+  --font-size-xl: 1.5rem;     /* 24px */
+  --font-size-2xl: 2rem;      /* 32px */
+  --font-size-3xl: 2.5rem;    /* 40px */
+  --font-size-4xl: 3rem;      /* 48px */
+}
+
+/* ========== 自定義顏色主題 ========== */
+
+.custom-color-section {
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.custom-color-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.color-presets {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.color-preset {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.color-preset:hover {
+  transform: scale(1.1);
+  border-color: var(--color-gray-400);
+}
+
+.color-preset.active {
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 2px var(--color-background);
+}
+
+/* ========== 響應式設計 ========== */
+
+@media (max-width: 768px) {
+  .theme-toggle {
+    top: var(--spacing-4);
+    right: var(--spacing-4);
+    width: 40px;
+    height: 40px;
+  }
+
+  .theme-selector {
+    top: 70px;
+    right: var(--spacing-4);
+    left: var(--spacing-4);
+    min-width: auto;
+  }
+
+  .font-size-controls {
+    bottom: var(--spacing-4);
+    right: var(--spacing-4);
+  }
+
+  .color-presets {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .theme-selector {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .color-presets {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ========== 動畫和過渡 ========== */
+
+/* 主題切換過渡動畫 */
+* {
+  transition:
+    background-color var(--duration-300) var(--ease-in-out),
+    border-color var(--duration-300) var(--ease-in-out),
+    color var(--duration-300) var(--ease-in-out),
+    box-shadow var(--duration-300) var(--ease-in-out);
+}
+
+/* 減少動畫偏好設定 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ========== 主題切換通知 ========== */
+
+.theme-change-notification {
+  position: fixed;
+  top: var(--spacing-6);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-primary-500);
+  color: white;
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-index-toast);
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+  transition: all var(--duration-300) var(--ease-out);
+  pointer-events: none;
+}
+
+.theme-change-notification.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ========== 列印樣式 ========== */
+
+@media print {
+  .theme-toggle,
+  .theme-selector,
+  .font-size-controls {
+    display: none !important;
+  }
+}
+
+/* ========== 可訪問性增強 ========== */
+
+/* 高對比模式下的主題切換按鈕 */
+@media (prefers-contrast: high) {
+  .theme-toggle {
+    border-width: 2px;
+  }
+
+  .theme-option {
+    border-width: 2px;
+  }
+
+  .theme-option.active {
+    border-width: 3px;
+  }
+}
+
+/* 焦點指示器增強 */
+.theme-toggle:focus,
+.theme-option:focus,
+.font-size-btn:focus,
+.color-preset:focus {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* ========== 主題預設支援 ========== */
+
+/* 系統深色主題偏好 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    /* 繼承深色主題的變數 */
+    --color-background: #0f172a;
+    --color-surface: #1e293b;
+    --color-border: #334155;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #94a3b8;
+  }
+}
+
+/* 系統淺色主題偏好 */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    /* 使用預設的淺色主題變數 */
+  }
+}
